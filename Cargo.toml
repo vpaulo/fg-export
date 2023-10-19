@@ -1,0 +1,19 @@
+[package]
+name = "fg-xport"
+version = "0.1.0"
+edition = "2021"
+authors = ["Vitor Rodrigues <vitorpaulorodrigues@gmail.com>"]
+description = "Figma components exporter"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.6", features = ["derive", "wrap_help"] }
+reqwest = { version = "0.11.18", features = ["json"] }
+serde = { version = "1.0.177", features = ["derive"] }
+serde_json = "1.0.104"
+tokio = { version = "1.29.1", features = ["full"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+anyhow = "1.0"
