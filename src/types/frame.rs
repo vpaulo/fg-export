@@ -5,7 +5,7 @@ use crate::utils::{default_opacity, default_effects};
 
 use super::{node::NodeCommon, paint::Paint, blend_mode::BlendMode, vector::Vector, transform::Transform, layout::{LayoutConstraint, LayoutAlign, LayoutMode, LayoutSizingMode, LayoutAlignItems, LayoutWrap, LayoutAlignContent, LayoutPositioning, LayoutGrid}, rectangle::Rectangle, styles::StyleType, effect::Effect, constraint::Constraint};
 
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Frame {
     #[serde(flatten)]

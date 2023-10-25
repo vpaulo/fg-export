@@ -17,5 +17,8 @@ pub enum Error {
   Network(#[from] reqwest::Error),
 
   #[error(transparent)]
-  Json(#[from] serde_json::Error)
+  Json(#[from] serde_json::Error),
+
+  #[error("File does not contain any components!!")]
+  NoComponent,
 }

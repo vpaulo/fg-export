@@ -61,6 +61,7 @@ impl LayoutMode {
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LayoutSizingMode {
+    Hug,
     Fixed,
     #[default]
     Auto,

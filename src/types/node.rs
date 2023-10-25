@@ -1,8 +1,26 @@
-use serde::{Deserialize, Serialize};
-use super::{colour::Colour, frame::{Frame, ExportSetting}, rectangle::Rectangle, vector::Vector, transform::Transform};
-use crate::utils;
+use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, Serialize, Default)]
+use serde::{Deserialize, Serialize};
+use super::{colour::Colour, frame::{Frame, ExportSetting, StrokeAlign}, rectangle::Rectangle, vector::Vector, transform::Transform, styles::{TypeStyle, StyleType}, layout::{LayoutAlign, LayoutConstraint}, blend_mode::BlendMode, effect::Effect, paint::Paint};
+use crate::utils::{self, default_opacity};
+
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum EasingType {
+    EaseIn,
+    EaseOut,
+    EaseInAndOut,
+    Linear,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct Path {
+    pub path: String,
+    pub winding_rule: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct NodeCommon {
     pub id: String,
     pub name: String,
@@ -12,41 +30,74 @@ pub struct NodeCommon {
     pub children: Vec<Node>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VectorCommon {
+    #[serde(flatten)]
+    pub node: NodeCommon,
+    pub locked: Option<bool>,
+    pub export_settings: Option<Vec<ExportSetting>>,
+    pub blend_mode: BlendMode,
+    pub preserve_ratio: Option<bool>,
+    pub constraints: LayoutConstraint,
+    pub transition_node_id: Option<String>,
+    pub transition_duration: Option<f32>,
+    pub transition_easing: Option<EasingType>,
+    #[serde(default = "default_opacity")]
+    pub opacity: f32,
+    pub absolute_bounding_box: Option<Rectangle>,
+    pub effects: Vec<Effect>,
+    pub size: Option<Vector>,
+    pub relative_transform: Option<Transform>,
+    pub is_mask: Option<bool>,
+    pub fills: Vec<Paint>,
+    pub fill_geometry: Option<Vec<Path>>,
+    #[serde(default)]
+    pub strokes: Vec<Paint>,
+    pub stroke_weight: Option<f32>,
+    pub stroke_align: Option<StrokeAlign>,
+    #[serde(default)]
+    pub stroke_dashes: Vec<f32>,
+    pub stroke_miter_angle: Option<f32>,
+    pub stroke_geometry: Option<Vec<Path>>,
+    pub styles: Option<HashMap<StyleType, String>>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum Node {
     DOCUMENT(NodeCommon),
     CANVAS {
         #[serde(flatten)]
         node: NodeCommon,
-        backgroundColor: Colour,
+        // backgroundColor: Colour,
     },
     FRAME(Frame),
     GROUP(Frame),
-    // VECTOR(VectorNode),
-    // BOOLEAN_OPERATION {
-    //     #[serde(flatten)]
-    //     vector: VectorNode,
-    //     booleanOperation: String,
-    // },
-    // STAR(VectorNode),
-    // LINE(VectorNode),
-    // ELLIPSE(VectorNode),
-    // REGULAR_POLYGON(VectorNode),
-    // RECTANGLE {
-    //     #[serde(flatten)]
-    //     vector: VectorNode,
-    //     cornerRadius: Option<f32>,
-    //     #[serde(default)]
-    //     rectangleCornerRadii: Vec<f32>,
-    // },
-    // TEXT {
-    //     #[serde(flatten)]
-    //     vector: VectorNode,
-    //     characters: String,
-    //     style: TypeStyle,
-    //     characterStyleOverrides: Vec<f32>,
-    // },
+    VECTOR(VectorCommon),
+    BOOLEAN_OPERATION {
+        #[serde(flatten)]
+        vector: VectorCommon,
+        booleanOperation: String,
+    },
+    STAR(VectorCommon),
+    LINE(VectorCommon),
+    ELLIPSE(VectorCommon),
+    REGULAR_POLYGON(VectorCommon),
+    RECTANGLE {
+        #[serde(flatten)]
+        vector: VectorCommon,
+        cornerRadius: Option<f32>,
+        #[serde(default)]
+        rectangleCornerRadii: Option<[f32; 4]>,
+    },
+    TEXT {
+        #[serde(flatten)]
+        vector: VectorCommon,
+        characters: String,
+        style: TypeStyle,
+        characterStyleOverrides: Vec<f32>,
+    },
     SLICE {
         #[serde(flatten)]
         node: NodeCommon,
@@ -71,14 +122,14 @@ impl Node {
             Node::CANVAS { node, .. } => node,
             Node::FRAME(Frame { node, .. }) => node,
             Node::GROUP(Frame { node, .. }) => node,
-            // Node::VECTOR(VectorNode { node, .. }) => node,
-            // Node::BOOLEAN_OPERATION { vector: VectorNode { node, .. }, .. } => node,
-            // Node::STAR(VectorNode { node, .. }) => node,
-            // Node::LINE(VectorNode { node, .. }) => node,
-            // Node::ELLIPSE(VectorNode { node, .. }) => node,
-            // Node::REGULAR_POLYGON(VectorNode { node, .. }) => node,
-            // Node::RECTANGLE { vector: VectorNode { node, .. }, .. } => node,
-            // Node::TEXT { vector: VectorNode { node, .. }, .. } => node,
+            Node::VECTOR(VectorCommon { node, .. }) => node,
+            Node::BOOLEAN_OPERATION { vector: VectorCommon { node, .. }, .. } => node,
+            Node::STAR(VectorCommon { node, .. }) => node,
+            Node::LINE(VectorCommon { node, .. }) => node,
+            Node::ELLIPSE(VectorCommon { node, .. }) => node,
+            Node::REGULAR_POLYGON(VectorCommon { node, .. }) => node,
+            Node::RECTANGLE { vector: VectorCommon { node, .. }, .. } => node,
+            Node::TEXT { vector: VectorCommon { node, .. }, .. } => node,
             Node::SLICE { node, .. } => node,
             Node::COMPONENT(Frame { node, .. }) => node,
             Node::INSTANCE { frame: Frame { node, .. }, .. } => node,
