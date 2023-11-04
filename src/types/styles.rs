@@ -41,8 +41,8 @@ pub struct TypeStyle {
     #[serde(default)]
     pub opentype_flags: HashMap<String, u32>,
     pub line_height_px: f32,
-    #[serde(default = "default_line_height_percent")]
-    pub line_height_percent: f32,
+    // #[serde(default = "default_line_height_percent")]
+    // pub line_height_percent: f32,
     #[serde(default = "default_line_height_percent")]
     pub line_height_percent_font_size: f32,
     pub line_height_unit: LineHeightUnit,

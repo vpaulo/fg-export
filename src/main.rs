@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::prelude::*;
 use clap::Parser;
 use types::file::FigmaData;
@@ -51,6 +53,54 @@ async fn main() -> Result<()> {
     // TODO: Then create webcomponents from those generated files
 
     // println!("body = {:?}", serde_json::to_string_pretty(&file).unwrap());
+    // print!(">>> {:?}", file.document.common().children.get(0));
+    // print!(">>> {:?}", serde_json::to_string_pretty(&file.document.common().children.get(0)).unwrap());
+    // TODO: maybe add page filter to the cli??
+    let pages = file.document.common().children.iter();
+    for page in pages {
+        let components = page.common().children.iter().filter_map(|node| node.is_component());
+        for component in components {
+            let mut styles = HashMap::new();
+            println!(">>> name: {:?}", component.node.name);
+            println!(">>> kebab: {:?}", component.get_name());
+
+            if component.layout_mode.is_none() {
+                if !component.width().is_empty() {
+                    styles.insert("width".to_string(),  component.width());
+                }
+                if !component.height().is_empty() {
+                    styles.insert("height".to_string(), component.height());
+                }
+            }
+
+            if !component.corner_radius().is_empty() {
+                styles.insert("border-radius".to_string(), component.corner_radius());
+            }
+
+            if !component.rectangle_corner_radii().is_empty() {
+                styles.insert("border-radius".to_string(), component.rectangle_corner_radii());
+            }
+
+
+
+
+            // GENERATE
+            println!(">>> styles: {:?}", styles);
+
+            let css_classes = format!(".{}", component.get_name());
+            let mut rules = String::new();
+
+            for (key, value) in styles.iter() {
+                rules.push_str(format!("{key}: {value};").as_str());
+            }
+
+            // TODO: Find/implement better CSS formatter
+            println!("{}", format!("{css_classes} {{{rules}}}"));
+        }
+    }
+
+
+
     Ok(())
 }
 

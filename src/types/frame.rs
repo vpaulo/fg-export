@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use convert_case::{Case, Casing};
 
 use crate::utils::{default_opacity, default_effects};
 
@@ -16,8 +17,7 @@ pub struct Frame {
     pub strokes: Vec<Paint>,
     pub stroke_weight: Option<f32>,
     pub stroke_align: Option<StrokeAlign>,
-    #[serde(default)]
-    pub stroke_dashes: Vec<f32>,
+    pub stroke_dashes: Option<Vec<f32>>,
     pub corner_radius: Option<f32>,
     pub rectangle_corner_radii: Option<[f32; 4]>,
     pub export_settings: Option<Vec<ExportSetting>>,
@@ -26,10 +26,9 @@ pub struct Frame {
     pub preserve_ratio: bool,
     pub constraints: LayoutConstraint,
     pub layout_align: Option<LayoutAlign>,
-    #[serde(default = "default_opacity")]
-    pub opacity: f32,
+    pub opacity: Option<f32>,
     pub absolute_bounding_box: Option<Rectangle>,
-    pub absolute_render_bounds: Option<Rectangle>,
+    // pub absolute_render_bounds: Option<Rectangle>, // this returns the bounds of the frame regarding the file, so it's not needed
     pub size: Option<Vector>,
     pub min_width: Option<f32>,
     pub max_width: Option<f32>,
@@ -41,51 +40,76 @@ pub struct Frame {
     pub layout_mode: LayoutMode,
     pub layout_sizing_horizontal: Option<LayoutSizingMode>, 
     pub layout_sizing_vertical: Option<LayoutSizingMode>,
-    #[serde(default)]
-    pub layout_wrap: LayoutWrap,
-    #[serde(default)]
-    pub primary_axis_sizing_mode: LayoutSizingMode, // FIXED, AUTO
-    #[serde(default)]
-    pub counter_axis_sizing_mode: LayoutSizingMode, // FIXED, AUTO
-    #[serde(default)]
-    pub primary_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX, SPACE_BETWEEN
-    #[serde(default)]
-    pub counter_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX,
-    #[serde(default)]
-    pub counter_axis_align_content: LayoutAlignContent, // AUTO SPACE_BETWEEN
-    #[serde(default)]
-    pub padding_left: f32,
-    #[serde(default)]
-    pub padding_right: f32,
-    #[serde(default)]
-    pub padding_top: f32,
-    #[serde(default)]
-    pub padding_bottom: f32,
-    #[serde(default)]
-    pub horizontal_padding: f32,
-    #[serde(default)]
-    pub vertical_padding: f32,
-    #[serde(default)]
-    pub item_spacing: f32,
-    #[serde(default)]
-    pub counter_axis_spacing: f32,
-    #[serde(default)]
-    pub layout_positioning: LayoutPositioning, // AUTO ABSOLUTE
-    #[serde(default)]
-    pub item_reverse_z_index_boolean: bool,
-    #[serde(default)]
-    pub strokes_included_in_layout: bool,
-    #[serde(default)]
-    layout_grids: Vec<LayoutGrid>,
-    #[serde(default)]
-    pub overflow_direction: OverflowDirection,
+    pub layout_wrap: Option<LayoutWrap>,
+    pub primary_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
+    pub counter_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
+    pub primary_axis_align_items: Option<LayoutAlignItems>, // MIN, CENTER, MAX, SPACE_BETWEEN
+    pub counter_axis_align_items: Option<LayoutAlignItems>, // MIN, CENTER, MAX,
+    pub counter_axis_align_content: Option<LayoutAlignContent>, // AUTO SPACE_BETWEEN
+    pub padding_left: Option<f32>,
+    pub padding_right: Option<f32>,
+    pub padding_top: Option<f32>,
+    pub padding_bottom: Option<f32>,
+    // #[serde(default)]
+    // pub horizontal_padding: f32,
+    // #[serde(default)]
+    // pub vertical_padding: f32,
+    pub item_spacing: Option<f32>,
+    pub counter_axis_spacing: Option<f32>,
+    pub layout_positioning: Option<LayoutPositioning>, // AUTO ABSOLUTE
+    pub item_reverse_z_index_boolean: Option<bool>,
+    pub strokes_included_in_layout: Option<bool>,
+    layout_grids: Option<Vec<LayoutGrid>>,
+    pub overflow_direction: Option<OverflowDirection>,
     #[serde(default = "default_effects")]
     pub effects: Vec<Effect>,
-    #[serde(default)]
-    pub is_mask: bool,
-    #[serde(default)]
-    pub is_mask_outline: bool,
+    pub is_mask: Option<bool>,
+    // #[serde(default)]
+    // pub is_mask_outline: bool,
     pub styles: Option<HashMap<StyleType, String>>,
+}
+
+impl Frame {
+    pub fn get_name(&self) -> String {
+        self.node.name.to_case(Case::Kebab)
+    }
+
+    pub fn width(&self) -> String {
+        match self.absolute_bounding_box {
+            Some(rec) => match rec.width {
+                Some(w) => format!("{}px", w), // TODO: convert to rem or pixels
+                None => "".to_string(),
+            }
+            None => "".to_string(),
+        }
+    }
+
+    pub fn height(&self) -> String {
+        match self.absolute_bounding_box {
+            Some(rec) => match rec.height {
+                Some(h) => format!("{}px", h), // TODO: convert to rem or pixels
+                None => "".to_string(),
+            }
+            None => "".to_string(),
+        }
+    }
+
+    pub fn corner_radius(&self) -> String {
+        match self.corner_radius {
+            Some(x) => format!("{}px", x), // TODO: convert to rem or pixels
+            None => "".to_string(),
+        }
+    }
+
+    // TODO: implement shorthands for the border radius
+    // TODO: combine corner_radius and rectangle_corner_radii to return the border radius
+    pub fn rectangle_corner_radii(&self) -> String {
+        match self.rectangle_corner_radii {
+            // TODO: Do not like this approach, future me plese improve :)
+            Some(x) => format!("{:?}px {:?}px {:?}px {:?}px", x.get(0).unwrap_or(&0.0), x.get(1).unwrap_or(&0.0), x.get(2).unwrap_or(&0.0), x.get(3).unwrap_or(&0.0)), // TODO: convert to rem or pixels
+            None => "".to_string(),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

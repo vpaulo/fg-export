@@ -88,7 +88,6 @@ pub enum Node {
         #[serde(flatten)]
         vector: VectorCommon,
         cornerRadius: Option<f32>,
-        #[serde(default)]
         rectangleCornerRadii: Option<[f32; 4]>,
     },
     TEXT {
@@ -133,6 +132,13 @@ impl Node {
             Node::SLICE { node, .. } => node,
             Node::COMPONENT(Frame { node, .. }) => node,
             Node::INSTANCE { frame: Frame { node, .. }, .. } => node,
+        }
+    }
+
+    pub fn is_component(&self) -> Option<&Frame> {
+        match self {
+            Node::COMPONENT(Frame) => Some(Frame),
+            _ => None,
         }
     }
 }
