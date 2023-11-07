@@ -1,8 +1,19 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
-use super::{colour::Colour, frame::{Frame, ExportSetting, StrokeAlign}, rectangle::Rectangle, vector::Vector, transform::Transform, styles::{TypeStyle, StyleType}, layout::{LayoutAlign, LayoutConstraint}, blend_mode::BlendMode, effect::Effect, paint::Paint};
+use super::{
+    blend_mode::BlendMode,
+    colour::Colour,
+    effect::Effect,
+    frame::{ExportSetting, Frame, StrokeAlign},
+    layout::{LayoutAlign, LayoutConstraint},
+    paint::Paint,
+    rectangle::Rectangle,
+    styles::{StyleType, TypeStyle},
+    transform::Transform,
+    vector::Vector,
+};
 use crate::utils::{self, default_opacity};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -122,16 +133,28 @@ impl Node {
             Node::FRAME(Frame { node, .. }) => node,
             Node::GROUP(Frame { node, .. }) => node,
             Node::VECTOR(VectorCommon { node, .. }) => node,
-            Node::BOOLEAN_OPERATION { vector: VectorCommon { node, .. }, .. } => node,
+            Node::BOOLEAN_OPERATION {
+                vector: VectorCommon { node, .. },
+                ..
+            } => node,
             Node::STAR(VectorCommon { node, .. }) => node,
             Node::LINE(VectorCommon { node, .. }) => node,
             Node::ELLIPSE(VectorCommon { node, .. }) => node,
             Node::REGULAR_POLYGON(VectorCommon { node, .. }) => node,
-            Node::RECTANGLE { vector: VectorCommon { node, .. }, .. } => node,
-            Node::TEXT { vector: VectorCommon { node, .. }, .. } => node,
+            Node::RECTANGLE {
+                vector: VectorCommon { node, .. },
+                ..
+            } => node,
+            Node::TEXT {
+                vector: VectorCommon { node, .. },
+                ..
+            } => node,
             Node::SLICE { node, .. } => node,
             Node::COMPONENT(Frame { node, .. }) => node,
-            Node::INSTANCE { frame: Frame { node, .. }, .. } => node,
+            Node::INSTANCE {
+                frame: Frame { node, .. },
+                ..
+            } => node,
         }
     }
 

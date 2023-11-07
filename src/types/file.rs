@@ -1,7 +1,11 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 
-use super::{node::Node, component::{ComponentSet, Component}, styles::Style};
+use super::{
+    component::{Component, ComponentSet},
+    node::Node,
+    styles::Style,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

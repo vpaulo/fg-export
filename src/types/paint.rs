@@ -44,6 +44,16 @@ pub enum PaintData {
     // Emoji,
 }
 
+impl PaintData {
+    // TODO: maybe pass a parameter into get_solid to choose between RGBA,HEX,HSL??
+    pub fn get_solid(&self) -> Option<&Colour> {
+        match self {
+            PaintData::Solid { color } => Some(color),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Paint {
     #[serde(default = "default_visible")]

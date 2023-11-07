@@ -1,10 +1,24 @@
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use convert_case::{Case, Casing};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use crate::utils::{default_opacity, default_effects};
+use crate::utils::{default_effects, default_opacity};
 
-use super::{node::NodeCommon, paint::Paint, blend_mode::BlendMode, vector::Vector, transform::Transform, layout::{LayoutConstraint, LayoutAlign, LayoutMode, LayoutSizingMode, LayoutAlignItems, LayoutWrap, LayoutAlignContent, LayoutPositioning, LayoutGrid}, rectangle::Rectangle, styles::StyleType, effect::Effect, constraint::Constraint};
+use super::{
+    blend_mode::BlendMode,
+    constraint::Constraint,
+    effect::Effect,
+    layout::{
+        LayoutAlign, LayoutAlignContent, LayoutAlignItems, LayoutConstraint, LayoutGrid,
+        LayoutMode, LayoutPositioning, LayoutSizingMode, LayoutWrap,
+    },
+    node::NodeCommon,
+    paint::Paint,
+    rectangle::Rectangle,
+    styles::StyleType,
+    transform::Transform,
+    vector::Vector,
+};
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -38,7 +52,7 @@ pub struct Frame {
     pub clips_content: bool,
     #[serde(default)]
     pub layout_mode: LayoutMode,
-    pub layout_sizing_horizontal: Option<LayoutSizingMode>, 
+    pub layout_sizing_horizontal: Option<LayoutSizingMode>,
     pub layout_sizing_vertical: Option<LayoutSizingMode>,
     pub layout_wrap: Option<LayoutWrap>,
     pub primary_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
@@ -77,9 +91,9 @@ impl Frame {
     pub fn width(&self) -> String {
         match self.absolute_bounding_box {
             Some(rec) => match rec.width {
-                Some(w) => format!("{}px", w), // TODO: convert to rem or pixels
+                Some(w) => format!("{}px", w),
                 None => "".to_string(),
-            }
+            },
             None => "".to_string(),
         }
     }
@@ -87,26 +101,53 @@ impl Frame {
     pub fn height(&self) -> String {
         match self.absolute_bounding_box {
             Some(rec) => match rec.height {
-                Some(h) => format!("{}px", h), // TODO: convert to rem or pixels
+                Some(h) => format!("{}px", h),
                 None => "".to_string(),
-            }
+            },
             None => "".to_string(),
         }
     }
 
-    pub fn corner_radius(&self) -> String {
+    pub fn border_radius(&self) -> String {
+        if !self.corner_radius().is_empty() {
+            return self.corner_radius();
+        }
+
+        if !self.rectangle_corner_radii().is_empty() {
+            return self.rectangle_corner_radii();
+        }
+
+        return "".to_string();
+    }
+    pub fn background(&self) -> String {
+        for paint in self.fills.iter() {
+            println!("{:?}", paint);
+            if paint.visible && paint.data.get_solid().is_some() {
+                // TODO: get colours, maybe move this logic to get_solid
+                return match paint.data.get_solid() {
+                    Some(c) => c.rgba(),
+                    None => "".to_string(),
+                };
+            }
+        }
+
+        return "".to_string();
+    }
+
+    fn corner_radius(&self) -> String {
         match self.corner_radius {
-            Some(x) => format!("{}px", x), // TODO: convert to rem or pixels
+            Some(x) => format!("{}px", x),
             None => "".to_string(),
         }
     }
 
     // TODO: implement shorthands for the border radius
-    // TODO: combine corner_radius and rectangle_corner_radii to return the border radius
-    pub fn rectangle_corner_radii(&self) -> String {
+    fn rectangle_corner_radii(&self) -> String {
         match self.rectangle_corner_radii {
-            // TODO: Do not like this approach, future me plese improve :)
-            Some(x) => format!("{:?}px {:?}px {:?}px {:?}px", x.get(0).unwrap_or(&0.0), x.get(1).unwrap_or(&0.0), x.get(2).unwrap_or(&0.0), x.get(3).unwrap_or(&0.0)), // TODO: convert to rem or pixels
+            Some([top_left, top_right, bottom_right, bottom_left]) => format!(
+                "{}px {}px {}px {}px",
+                top_left, top_right, bottom_right, bottom_left
+            ),
             None => "".to_string(),
         }
     }

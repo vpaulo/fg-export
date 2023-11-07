@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{colour::Colour, blend_mode::BlendMode, vector::Vector};
+use super::{blend_mode::BlendMode, colour::Colour, vector::Vector};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

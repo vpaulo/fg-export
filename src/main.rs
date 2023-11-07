@@ -4,18 +4,17 @@ use crate::prelude::*;
 use clap::Parser;
 use types::file::FigmaData;
 
+mod cli;
 mod error;
 mod prelude;
-mod cli;
 
 mod types;
 mod utils;
 
-
 async fn load(cmd: &cli::Cli) -> Result<FigmaData> {
     // file: 4TY92OjhtdVceoYBqlkfhU
     // token: figd_J2gB6y3zB10jKf90oBDVLgQ87KFADthb-efzgWkr
-    
+
     let document = reqwest::Client::new()
         .get(&format!("https://api.figma.com/v1/files/{}", cmd.file))
         .header("X-Figma-Token", cmd.token.clone())
@@ -28,7 +27,10 @@ async fn load(cmd: &cli::Cli) -> Result<FigmaData> {
     std::fs::write("figma_output/original_output.json", &document)?;
 
     let data: FigmaData = serde_json::from_slice(&document)?;
-    std::fs::write("figma_output/cache.json", serde_json::to_string_pretty(&data).unwrap())?;
+    std::fs::write(
+        "figma_output/cache.json",
+        serde_json::to_string_pretty(&data).unwrap(),
+    )?;
     Ok(data)
 }
 
@@ -46,7 +48,7 @@ async fn main() -> Result<()> {
     if file.components.is_empty() {
         return Err(error::Error::NoComponent);
     }
-    
+
     // TODO: this is test on typing with the new keyboard, it will take a while to get used to
     // TODO: start parsing component styles and structure
     // TODO: Create separate files for both generated CSS and HTMl
@@ -56,33 +58,39 @@ async fn main() -> Result<()> {
     // print!(">>> {:?}", file.document.common().children.get(0));
     // print!(">>> {:?}", serde_json::to_string_pretty(&file.document.common().children.get(0)).unwrap());
     // TODO: maybe add page filter to the cli??
+    // TODO: maybe add option to choose between pixels or rems
     let pages = file.document.common().children.iter();
     for page in pages {
-        let components = page.common().children.iter().filter_map(|node| node.is_component());
+        let components = page
+            .common()
+            .children
+            .iter()
+            .filter_map(|node| node.is_component());
         for component in components {
             let mut styles = HashMap::new();
             println!(">>> name: {:?}", component.node.name);
             println!(">>> kebab: {:?}", component.get_name());
 
+            // TODO: check rotation, the sizes change while rotating only n * 90 works
+            // (rotation / PI) * 180 OR round(rotation / PI) * 180
+
+            // TODO: Auto layout messes the widths heights
             if component.layout_mode.is_none() {
                 if !component.width().is_empty() {
-                    styles.insert("width".to_string(),  component.width());
+                    styles.insert("width".to_string(), component.width());
                 }
                 if !component.height().is_empty() {
                     styles.insert("height".to_string(), component.height());
                 }
             }
 
-            if !component.corner_radius().is_empty() {
-                styles.insert("border-radius".to_string(), component.corner_radius());
+            if !component.border_radius().is_empty() {
+                styles.insert("border-radius".to_string(), component.border_radius());
             }
 
-            if !component.rectangle_corner_radii().is_empty() {
-                styles.insert("border-radius".to_string(), component.rectangle_corner_radii());
+            if !component.background().is_empty() {
+                styles.insert("background".to_string(), component.background());
             }
-
-
-
 
             // GENERATE
             println!(">>> styles: {:?}", styles);
@@ -98,8 +106,6 @@ async fn main() -> Result<()> {
             println!("{}", format!("{css_classes} {{{rules}}}"));
         }
     }
-
-
 
     Ok(())
 }

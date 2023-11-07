@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{blend_mode::BlendMode, vector::Vector, colour::Colour};
+use super::{blend_mode::BlendMode, colour::Colour, vector::Vector};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Gradient {

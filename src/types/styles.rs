@@ -2,9 +2,18 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{default_paragraph_spacing, default_paragraph_indent, default_list_spacing, default_line_height_percent};
+use crate::utils::{
+    default_line_height_percent, default_list_spacing, default_paragraph_indent,
+    default_paragraph_spacing,
+};
 
-use super::{paint::Paint, text::{TextCase, TextDecoration, TextAutoResize, TextAlignHorizontal, TextAlignVertical, TextTruncation, LineHeightUnit}};
+use super::{
+    paint::Paint,
+    text::{
+        LineHeightUnit, TextAlignHorizontal, TextAlignVertical, TextAutoResize, TextCase,
+        TextDecoration, TextTruncation,
+    },
+};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
