@@ -119,6 +119,7 @@ impl Frame {
 
         return "".to_string();
     }
+
     pub fn background(&self) -> String {
         for paint in self.fills.iter() {
             println!("{:?}", paint);
@@ -144,12 +145,53 @@ impl Frame {
     // TODO: implement shorthands for the border radius
     fn rectangle_corner_radii(&self) -> String {
         match self.rectangle_corner_radii {
-            Some([top_left, top_right, bottom_right, bottom_left]) => format!(
-                "{}px {}px {}px {}px",
-                top_left, top_right, bottom_right, bottom_left
-            ),
-            None => "".to_string(),
+            Some([top_left, top_right, bottom_right, bottom_left]) => {
+                if top_left == bottom_right && top_right == bottom_left {
+                    format!(
+                        "{}px {}px",
+                        top_left, top_right
+                    )
+                } else if top_right == bottom_left {
+                    format!(
+                        "{}px {}px {}px",
+                        top_left, top_right, bottom_right
+                    )
+                } else {
+                    format!(
+                        "{}px {}px {}px {}px",
+                        top_left, top_right, bottom_right, bottom_left
+                    )
+                }
+            }
+            None => "".to_string()
         }
+    }
+}
+
+#[cfg(test)]
+mod frame_tests {
+    use super::*;
+
+    #[test]
+    fn rectangle_corner_radii() {
+        /* top-left | top-right | bottom-right | bottom-left */
+        assert_eq!(
+            Frame { rectangle_corner_radii: Some([1.0, 2.0, 3.0, 4.0]), ..Frame::default() }.rectangle_corner_radii(),
+            "1px 2px 3px 4px"
+        );
+
+        // shorthands
+        
+        /* top-left-and-bottom-right | top-right-and-bottom-left */
+        assert_eq!(
+            Frame { rectangle_corner_radii: Some([1.0, 2.0, 1.0, 2.0]), ..Frame::default() }.rectangle_corner_radii(),
+            "1px 2px"
+        );
+        /* top-left | top-right-and-bottom-left | bottom-right */
+        assert_eq!(
+            Frame { rectangle_corner_radii: Some([1.0, 2.0, 3.0, 2.0]), ..Frame::default() }.rectangle_corner_radii(),
+            "1px 2px 3px"
+        );
     }
 }
 
