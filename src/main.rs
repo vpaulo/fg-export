@@ -90,6 +90,10 @@ async fn main() -> Result<()> {
                 styles.insert("border-radius".to_string(), component.border_radius());
             }
 
+            if !component.border().is_empty() {
+                styles.insert("border".to_string(), component.border());
+            }
+
             if !component.background().is_empty() {
                 styles.insert("background".to_string(), component.background());
             }

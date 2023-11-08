@@ -128,6 +128,7 @@ impl Frame {
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: get colours, maybe move this logic to get_solid
                 // TODO: build string for when there's multiple backgrounds
+                // Multiple Solid backgrounds converts to a linear gradient, for now we select the first one passing the condition.
                 return match paint.data.get_solid() {
                     Some(c) => c.rgba(),
                     None => "".to_string(),
@@ -140,9 +141,42 @@ impl Frame {
 
     pub fn rotation(&self) -> String {
         match self.rotation {
-            Some(r) => format!("rotate({}deg)", (r / PI) * 180.0),
+            // If None or zero return empty string.
+            Some(r) => {
+                if ((r / PI) * 180.0).round() != 0.0 {
+                    format!("rotate({:.0}deg)", (r / PI) * 180.0)
+                } else {
+                    "".to_string()
+                }
+            }
             None => "".to_string(),
         }
+    }
+
+    pub fn border(&self) -> String {
+        // TODO: a lot of options for the border :/
+        // "strokes": [
+        //       {
+        //         "visible": true,
+        //         "opacity": 1.0,
+        //         "type": "SOLID",
+        //         "color": {
+        //           "a": 1.0,
+        //           "r": 0.0,
+        //           "g": 0.0,
+        //           "b": 0.0
+        //         }
+        //       }
+        //     ],
+        //     "strokeWeight": 1.0,
+        //     "strokeAlign": "INSIDE",
+        //     "strokeDashes": null,
+        //     "cornerRadius": null,
+        // match self.corner_radius {
+        //     Some(x) => format!("{}px", x),
+        //     None => "".to_string(),
+        // }
+        return "".to_string();
     }
 
     fn corner_radius(&self) -> String {
@@ -226,6 +260,14 @@ mod frame_tests {
             }
             .rotation(),
             "rotate(-45deg)"
+        );
+        assert_eq!(
+            Frame {
+                rotation: Some(-5.551115e-17), // This number is very close to 0, so we will assume that it is 0
+                ..Frame::default()
+            }
+            .rotation(),
+            ""
         );
     }
 }
