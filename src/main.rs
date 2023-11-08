@@ -71,9 +71,6 @@ async fn main() -> Result<()> {
             println!(">>> name: {:?}", component.node.name);
             println!(">>> kebab: {:?}", component.get_name());
 
-            // TODO: check rotation, the sizes change while rotating only n * 90 works
-            // (rotation / PI) * 180 OR round(rotation / PI) * 180
-
             // TODO: Auto layout messes the widths heights
             if component.layout_mode.is_none() {
                 if !component.width().is_empty() {
@@ -82,6 +79,11 @@ async fn main() -> Result<()> {
                 if !component.height().is_empty() {
                     styles.insert("height".to_string(), component.height());
                 }
+            }
+
+            // Rotation only works well for 90 * n degrees, for other values like 45deg figma changesn the sizes of width and height.
+            if !component.rotation().is_empty() {
+                styles.insert("transform".to_string(), component.rotation());
             }
 
             if !component.border_radius().is_empty() {

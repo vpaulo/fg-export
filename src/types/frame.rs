@@ -1,6 +1,7 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::f32::consts::PI;
 
 use crate::utils::{default_effects, default_opacity};
 
@@ -35,6 +36,7 @@ pub struct Frame {
     pub corner_radius: Option<f32>,
     pub rectangle_corner_radii: Option<[f32; 4]>,
     pub export_settings: Option<Vec<ExportSetting>>,
+    pub rotation: Option<f32>,
     pub blend_mode: Option<BlendMode>,
     #[serde(default)]
     pub preserve_ratio: bool,
@@ -125,6 +127,7 @@ impl Frame {
             println!("{:?}", paint);
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: get colours, maybe move this logic to get_solid
+                // TODO: build string for when there's multiple backgrounds
                 return match paint.data.get_solid() {
                     Some(c) => c.rgba(),
                     None => "".to_string(),
@@ -135,6 +138,13 @@ impl Frame {
         return "".to_string();
     }
 
+    pub fn rotation(&self) -> String {
+        match self.rotation {
+            Some(r) => format!("rotate({}deg)", (r / PI) * 180.0),
+            None => "".to_string(),
+        }
+    }
+
     fn corner_radius(&self) -> String {
         match self.corner_radius {
             Some(x) => format!("{}px", x),
@@ -142,20 +152,13 @@ impl Frame {
         }
     }
 
-    // TODO: implement shorthands for the border radius
     fn rectangle_corner_radii(&self) -> String {
         match self.rectangle_corner_radii {
             Some([top_left, top_right, bottom_right, bottom_left]) => {
                 if top_left == bottom_right && top_right == bottom_left {
-                    format!(
-                        "{}px {}px",
-                        top_left, top_right
-                    )
+                    format!("{}px {}px", top_left, top_right)
                 } else if top_right == bottom_left {
-                    format!(
-                        "{}px {}px {}px",
-                        top_left, top_right, bottom_right
-                    )
+                    format!("{}px {}px {}px", top_left, top_right, bottom_right)
                 } else {
                     format!(
                         "{}px {}px {}px {}px",
@@ -163,7 +166,7 @@ impl Frame {
                     )
                 }
             }
-            None => "".to_string()
+            None => "".to_string(),
         }
     }
 }
@@ -176,21 +179,53 @@ mod frame_tests {
     fn rectangle_corner_radii() {
         /* top-left | top-right | bottom-right | bottom-left */
         assert_eq!(
-            Frame { rectangle_corner_radii: Some([1.0, 2.0, 3.0, 4.0]), ..Frame::default() }.rectangle_corner_radii(),
+            Frame {
+                rectangle_corner_radii: Some([1.0, 2.0, 3.0, 4.0]),
+                ..Frame::default()
+            }
+            .rectangle_corner_radii(),
             "1px 2px 3px 4px"
         );
 
         // shorthands
-        
+
         /* top-left-and-bottom-right | top-right-and-bottom-left */
         assert_eq!(
-            Frame { rectangle_corner_radii: Some([1.0, 2.0, 1.0, 2.0]), ..Frame::default() }.rectangle_corner_radii(),
+            Frame {
+                rectangle_corner_radii: Some([1.0, 2.0, 1.0, 2.0]),
+                ..Frame::default()
+            }
+            .rectangle_corner_radii(),
             "1px 2px"
         );
         /* top-left | top-right-and-bottom-left | bottom-right */
         assert_eq!(
-            Frame { rectangle_corner_radii: Some([1.0, 2.0, 3.0, 2.0]), ..Frame::default() }.rectangle_corner_radii(),
+            Frame {
+                rectangle_corner_radii: Some([1.0, 2.0, 3.0, 2.0]),
+                ..Frame::default()
+            }
+            .rectangle_corner_radii(),
             "1px 2px 3px"
+        );
+    }
+
+    #[test]
+    fn rotation() {
+        assert_eq!(
+            Frame {
+                rotation: Some(-1.5707964),
+                ..Frame::default()
+            }
+            .rotation(),
+            "rotate(-90deg)"
+        );
+        assert_eq!(
+            Frame {
+                rotation: Some(-0.7853982),
+                ..Frame::default()
+            }
+            .rotation(),
+            "rotate(-45deg)"
         );
     }
 }
