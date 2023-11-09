@@ -33,6 +33,7 @@ pub struct Frame {
     pub stroke_weight: Option<f32>,
     pub stroke_align: Option<StrokeAlign>,
     pub stroke_dashes: Option<Vec<f32>>,
+    pub individual_stroke_weights: Option<StrokeWeights>,
     pub corner_radius: Option<f32>,
     pub rectangle_corner_radii: Option<[f32; 4]>,
     pub export_settings: Option<Vec<ExportSetting>>,
@@ -94,9 +95,9 @@ impl Frame {
         match self.absolute_bounding_box {
             Some(rec) => match rec.width {
                 Some(w) => format!("{}px", w),
-                None => "".to_string(),
+                None => String::new(),
             },
-            None => "".to_string(),
+            None => String::new(),
         }
     }
 
@@ -104,9 +105,9 @@ impl Frame {
         match self.absolute_bounding_box {
             Some(rec) => match rec.height {
                 Some(h) => format!("{}px", h),
-                None => "".to_string(),
+                None => String::new(),
             },
-            None => "".to_string(),
+            None => String::new(),
         }
     }
 
@@ -119,7 +120,7 @@ impl Frame {
             return self.rectangle_corner_radii();
         }
 
-        return "".to_string();
+        return String::new();
     }
 
     pub fn background(&self) -> String {
@@ -131,12 +132,12 @@ impl Frame {
                 // Multiple Solid backgrounds converts to a linear gradient, for now we select the first one passing the condition.
                 return match paint.data.get_solid() {
                     Some(c) => c.rgba(),
-                    None => "".to_string(),
+                    None => String::new(),
                 };
             }
         }
 
-        return "".to_string();
+        return String::new();
     }
 
     pub fn rotation(&self) -> String {
@@ -146,43 +147,27 @@ impl Frame {
                 if ((r / PI) * 180.0).round() != 0.0 {
                     format!("rotate({:.0}deg)", (r / PI) * 180.0)
                 } else {
-                    "".to_string()
+                    String::new()
                 }
             }
-            None => "".to_string(),
+            None => String::new(),
         }
     }
 
-    pub fn border(&self) -> String {
-        // TODO: a lot of options for the border :/
-        // "strokes": [
-        //       {
-        //         "visible": true,
-        //         "opacity": 1.0,
-        //         "type": "SOLID",
-        //         "color": {
-        //           "a": 1.0,
-        //           "r": 0.0,
-        //           "g": 0.0,
-        //           "b": 0.0
-        //         }
-        //       }
-        //     ],
-        //     "strokeWeight": 1.0,
-        //     "strokeAlign": "INSIDE",
-        //     "strokeDashes": null,
-        //     "cornerRadius": null,
-        // match self.corner_radius {
-        //     Some(x) => format!("{}px", x),
-        //     None => "".to_string(),
-        // }
-        return "".to_string();
+    pub fn border(&self) -> HashMap<String, String> {
+        if !self.border_individual().is_empty() {
+            return self.border_individual();
+        } else if !self.border_all().is_empty() {
+            return self.border_all();
+        }
+
+        return HashMap::new();
     }
 
     fn corner_radius(&self) -> String {
         match self.corner_radius {
             Some(x) => format!("{}px", x),
-            None => "".to_string(),
+            None => String::new(),
         }
     }
 
@@ -200,7 +185,87 @@ impl Frame {
                     )
                 }
             }
-            None => "".to_string(),
+            None => String::new(),
+        }
+    }
+
+    fn border_style(&self) -> String {
+        if self.stroke_dashes.is_some() {
+            return "dashed".to_string();
+        }
+
+        "solid".to_string()
+    }
+
+    fn border_colour(&self) -> String {
+        for paint in self.strokes.iter() {
+            if paint.visible && paint.data.get_solid().is_some() {
+                // TODO: Same as background
+                return match paint.data.get_solid() {
+                    Some(c) => c.rgba(),
+                    None => String::new(),
+                };
+            }
+        }
+
+        String::new()
+    }
+
+    fn border_all(&self) -> HashMap<String, String> {
+        let mut borders: HashMap<String, String> = HashMap::new();
+
+        let width = match self.stroke_weight {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        };
+
+        let style = self.border_style();
+        let colour = self.border_colour();
+
+        if !width.is_empty() & !colour.is_empty() {
+            borders.insert("border".to_string(), format!("{width} {style} {colour}"));
+            borders
+        } else {
+            HashMap::new()
+        }
+    }
+
+    fn border_individual(&self) -> HashMap<String, String> {
+        let mut borders: HashMap<String, String> = HashMap::new();
+
+        let style = self.border_style();
+        let colour = self.border_colour();
+
+        match self.individual_stroke_weights {
+            Some(border) => {
+                if border.top > 0.0 && !colour.is_empty() {
+                    borders.insert(
+                        "border-top".to_string(),
+                        format!("{}px {} {}", border.top, style, colour),
+                    );
+                }
+                if border.right > 0.0 && !colour.is_empty() {
+                    borders.insert(
+                        "border-right".to_string(),
+                        format!("{}px {} {}", border.right, style, colour),
+                    );
+                }
+                if border.bottom > 0.0 && !colour.is_empty() {
+                    borders.insert(
+                        "border-bottom".to_string(),
+                        format!("{}px {} {}", border.bottom, style, colour),
+                    );
+                }
+                if border.left > 0.0 && !colour.is_empty() {
+                    borders.insert(
+                        "border-left".to_string(),
+                        format!("{}px {} {}", border.left, style, colour),
+                    );
+                }
+
+                borders
+            }
+            None => HashMap::new(),
         }
     }
 }

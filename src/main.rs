@@ -91,7 +91,9 @@ async fn main() -> Result<()> {
             }
 
             if !component.border().is_empty() {
-                styles.insert("border".to_string(), component.border());
+                for (key, value) in component.border().iter() {
+                    styles.insert(key.to_string(), value.to_string());
+                }
             }
 
             if !component.background().is_empty() {
