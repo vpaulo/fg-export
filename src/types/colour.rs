@@ -18,7 +18,7 @@ impl Colour {
         let green = self.g * 255.0;
         let blue = self.b * 255.0;
         let alpha = self.a;
-        return format!("rgba({red},{green},{blue},{alpha})");
+        return format!("rgba({red:.0},{green:.0},{blue:.0},{alpha})");
     }
 }
 
@@ -70,7 +70,7 @@ mod tests {
                 b: 0.3
             }
             .rgba(),
-            "rgba(25.5,51,76.5,0.5)"
+            "rgba(26,51,76,0.5)"
         );
     }
 }
