@@ -144,8 +144,9 @@ impl Frame {
         match self.rotation {
             // If None or zero return empty string.
             Some(r) => {
-                if ((r / PI) * 180.0).round() != 0.0 {
-                    format!("rotate({:.0}deg)", (r / PI) * 180.0)
+                let degrees = f32::to_degrees(r);
+                if degrees.round() != 0.0 {
+                    format!("rotate({:.0}deg)", degrees)
                 } else {
                     String::new()
                 }
