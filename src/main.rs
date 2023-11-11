@@ -12,9 +12,6 @@ mod types;
 mod utils;
 
 async fn load(cmd: &cli::Cli) -> Result<FigmaData> {
-    // file: 4TY92OjhtdVceoYBqlkfhU
-    // token: figd_J2gB6y3zB10jKf90oBDVLgQ87KFADthb-efzgWkr
-
     let document = reqwest::Client::new()
         .get(&format!("https://api.figma.com/v1/files/{}", cmd.file))
         .header("X-Figma-Token", cmd.token.clone())
@@ -100,7 +97,19 @@ async fn main() -> Result<()> {
                 styles.insert("background".to_string(), component.background());
             }
 
-            // GENERATE
+            if !component.box_shadow().is_empty() {
+                styles.insert("box-shadow".to_string(), component.box_shadow());
+            }
+
+            if !component.blur().is_empty() {
+                styles.insert("filter".to_string(), component.blur());
+            }
+
+            if !component.background_blur().is_empty() {
+                styles.insert("backdrop-filter".to_string(), component.background_blur());
+            }
+
+            // GENERATE CSS
             println!(">>> styles: {:?}", styles);
 
             let css_classes = format!(".{}", component.get_name());
@@ -110,13 +119,19 @@ async fn main() -> Result<()> {
                 rules.push_str(format!("{key}: {value};").as_str());
             }
 
+            // TODO: GENERATE HTML
+            // TODO: GENERATE TOKENS
+            // TODO: GENERATE DESIGN_TOKENS
+
             // TODO: Find/implement better CSS formatter
             println!("{}", format!("{css_classes} {{{rules}}}"));
+            std::fs::create_dir_all("figma_output/css")?;
+            std::fs::write(
+                format!("figma_output/css/{}.css", component.get_name()),
+                format!("{css_classes} {{{rules}}}"),
+            )?;
         }
     }
 
     Ok(())
 }
-
-// https://github.com/letsgetrusty/json_parsing_example/tree/master
-// curl -sH 'X-Figma-Token: figd_J2gB6y3zB10jKf90oBDVLgQ87KFADthb-efzgWkr' 'https://api.figma.com/v1/files/4TY92OjhtdVceoYBqlkfhU' | python -m json.tool

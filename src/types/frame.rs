@@ -1,14 +1,14 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::f32::consts::PI;
+use std::{collections::HashMap, os::unix::raw::off_t};
 
 use crate::utils::{default_effects, default_opacity};
 
 use super::{
     blend_mode::BlendMode,
     constraint::Constraint,
-    effect::Effect,
+    effect::{self, Effect, EffectType},
     layout::{
         LayoutAlign, LayoutAlignContent, LayoutAlignItems, LayoutConstraint, LayoutGrid,
         LayoutMode, LayoutPositioning, LayoutSizingMode, LayoutWrap,
@@ -125,7 +125,6 @@ impl Frame {
 
     pub fn background(&self) -> String {
         for paint in self.fills.iter() {
-            println!("{:?}", paint);
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: get colours, maybe move this logic to get_solid
                 // TODO: build string for when there's multiple backgrounds
@@ -156,6 +155,7 @@ impl Frame {
     }
 
     pub fn border(&self) -> HashMap<String, String> {
+        // TODO: when multiple colours and sizes convert into "border-width", "border-color" and "border-style"
         if !self.border_individual().is_empty() {
             return self.border_individual();
         } else if !self.border_all().is_empty() {
@@ -163,6 +163,55 @@ impl Frame {
         }
 
         return HashMap::new();
+    }
+
+    pub fn box_shadow(&self) -> String {
+        let effect_list: Vec<String> = self
+            .effects
+            .iter()
+            .filter(|x| x.visible)
+            .map(|e| match e.effect_type {
+                EffectType::InnerShadow => format!("inset {}", Frame::shadow(e)),
+                EffectType::DropShadow => Frame::shadow(e),
+                _ => String::new(),
+            })
+            .collect();
+
+        effect_list.join(", ")
+    }
+
+    pub fn blur(&self) -> String {
+        let filter_list: Vec<String> = self
+            .effects
+            .iter()
+            .filter(|x| x.visible)
+            .map(|e| match e.effect_type {
+                EffectType::LayerBlur => format!("blur({:0}px)", e.radius),
+                _ => String::new(),
+            })
+            .collect();
+
+        match filter_list.first() {
+            Some(x) => x.to_string(),
+            None => String::new(),
+        }
+    }
+
+    pub fn background_blur(&self) -> String {
+        let filter_list: Vec<String> = self
+            .effects
+            .iter()
+            .filter(|x| x.visible)
+            .map(|e| match e.effect_type {
+                EffectType::BackgroundBlur => format!("blur({:0}px)", e.radius),
+                _ => String::new(),
+            })
+            .collect();
+
+        match filter_list.first() {
+            Some(x) => x.to_string(),
+            None => String::new(),
+        }
     }
 
     fn corner_radius(&self) -> String {
@@ -268,6 +317,20 @@ impl Frame {
             }
             None => HashMap::new(),
         }
+    }
+
+    fn shadow(effect: &Effect) -> String {
+        let Effect {
+            offset,
+            spread,
+            radius,
+            color,
+            ..
+        } = effect;
+        let x = offset.x();
+        let y = offset.y();
+        let rgba = color.rgba();
+        format!("{x:0}px {y:0}px {radius:0}px {spread:0}px {rgba}")
     }
 }
 
