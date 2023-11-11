@@ -76,6 +76,27 @@ async fn main() -> Result<()> {
                 if !component.height().is_empty() {
                     styles.insert("height".to_string(), component.height());
                 }
+            } else if component.layout_mode.is_auto_layout() {
+                // TODO: should we do inline-flex??
+                styles.insert("display".to_string(), "flex".to_string());
+
+                if component.layout_mode.is_vertical() {
+                    styles.insert("flex-direction".to_string(), "column".to_string());
+                }
+
+                if !component.alignment().is_empty() {
+                    for (key, value) in component.alignment().iter() {
+                        styles.insert(key.to_string(), value.to_string());
+                    }
+                }
+
+                if !component.gap().is_empty() {
+                    styles.insert("gap".to_string(), component.gap());
+                }
+
+                if !component.padding().is_empty() {
+                    styles.insert("padding".to_string(), component.padding());
+                }
             }
 
             // Rotation only works well for 90 * n degrees, for other values like 45deg figma changesn the sizes of width and height.

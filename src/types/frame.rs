@@ -60,13 +60,19 @@ pub struct Frame {
     pub layout_wrap: Option<LayoutWrap>,
     pub primary_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
     pub counter_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
-    pub primary_axis_align_items: Option<LayoutAlignItems>, // MIN, CENTER, MAX, SPACE_BETWEEN
-    pub counter_axis_align_items: Option<LayoutAlignItems>, // MIN, CENTER, MAX,
+    #[serde(default)]
+    pub primary_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX, SPACE_BETWEEN
+    #[serde(default)]
+    pub counter_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX,
     pub counter_axis_align_content: Option<LayoutAlignContent>, // AUTO SPACE_BETWEEN
-    pub padding_left: Option<f32>,
-    pub padding_right: Option<f32>,
-    pub padding_top: Option<f32>,
-    pub padding_bottom: Option<f32>,
+    #[serde(default)]
+    pub padding_left: f32,
+    #[serde(default)]
+    pub padding_right: f32,
+    #[serde(default)]
+    pub padding_top: f32,
+    #[serde(default)]
+    pub padding_bottom: f32,
     // #[serde(default)]
     // pub horizontal_padding: f32,
     // #[serde(default)]
@@ -211,6 +217,70 @@ impl Frame {
         match filter_list.first() {
             Some(x) => x.to_string(),
             None => String::new(),
+        }
+    }
+
+    pub fn alignment(&self) -> HashMap<String, String> {
+        let mut styles: HashMap<String, String> = HashMap::new();
+
+        // TODO: keeping this for we pass the parent just in case
+        // let align_items = if self.layout_mode.is_vertical() {
+        //     &self.primary_axis_align_items
+        // } else {
+        //     &self.counter_axis_align_items
+        // };
+        // let justify_content = if self.layout_mode.is_vertical() {
+        //     &self.counter_axis_align_items
+        // } else {
+        //     &self.primary_axis_align_items
+        // };
+
+        let align = match self.counter_axis_align_items {
+            LayoutAlignItems::Center => "center".to_string(),
+            LayoutAlignItems::Max => "flex-end".to_string(),
+            LayoutAlignItems::SpaceBetween => String::new(), // align items does not have space between
+            _ => "flex-start".to_string(),                   // Default LayoutAlignItems::Min
+        };
+
+        let content = match self.primary_axis_align_items {
+            LayoutAlignItems::Center => "center".to_string(),
+            LayoutAlignItems::Max => "flex-end".to_string(),
+            LayoutAlignItems::SpaceBetween => "space-between".to_string(),
+            _ => "flex-start".to_string(), // Default LayoutAlignItems::Min
+        };
+
+        if !align.is_empty() {
+            styles.insert("align-items".to_string(), align);
+        }
+
+        if !content.is_empty() {
+            styles.insert("justify-content".to_string(), content);
+        }
+
+        styles
+    }
+
+    pub fn gap(&self) -> String {
+        match self.item_spacing {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        }
+    }
+
+    pub fn padding(&self) -> String {
+        let top = self.padding_top;
+        let right = self.padding_right;
+        let bottom = self.padding_bottom;
+        let left = self.padding_left;
+
+        if top == bottom && right == left && top == right {
+            format!("{top}px")
+        } else if top == bottom && right == left {
+            format!("{top}px {right}px")
+        } else if right == left {
+            format!("{top}px {right}px {bottom}px")
+        } else {
+            format!("{top}px {right}px {bottom}px {left}px")
         }
     }
 

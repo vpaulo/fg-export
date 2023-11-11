@@ -56,6 +56,24 @@ impl LayoutMode {
             _ => false,
         }
     }
+
+    pub fn is_vertical(&self) -> bool {
+        match self {
+            LayoutMode::Vertical => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_horizontal(&self) -> bool {
+        match self {
+            LayoutMode::Horizontal => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_auto_layout(&self) -> bool {
+        self.is_vertical() || self.is_horizontal()
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
