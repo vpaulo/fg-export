@@ -76,10 +76,17 @@ impl LayoutMode {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LayoutSizingMode {
     Hug,
+    Fixed,
+    Auto,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AxisSizingMode {
     Fixed,
     #[default]
     Auto,

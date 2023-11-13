@@ -68,6 +68,14 @@ async fn main() -> Result<()> {
             println!(">>> name: {:?}", component.node.name);
             println!(">>> kebab: {:?}", component.get_name());
 
+            if !component.node.visible {
+                styles.insert("display".to_string(), "none".to_string());
+            }
+
+            if component.clips_content {
+                styles.insert("overflow".to_string(), "hidden".to_string());
+            }
+
             // TODO: Auto layout messes the widths heights
             if component.layout_mode.is_none() {
                 if !component.width().is_empty() {
@@ -78,7 +86,19 @@ async fn main() -> Result<()> {
                 }
             } else if component.layout_mode.is_auto_layout() {
                 // TODO: should we do inline-flex??
-                styles.insert("display".to_string(), "flex".to_string());
+                if component.node.visible {
+                    styles.insert("display".to_string(), "flex".to_string());
+                }
+
+                if !component.sizes().is_empty() {
+                    for (key, value) in component.sizes().iter() {
+                        styles.insert(key.to_string(), value.to_string());
+                    }
+                }
+
+                if !component.layout_wrap().is_empty() {
+                    styles.insert("flex-wrap".to_string(), component.layout_wrap());
+                }
 
                 if component.layout_mode.is_vertical() {
                     styles.insert("flex-direction".to_string(), "column".to_string());

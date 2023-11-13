@@ -5,6 +5,7 @@ use std::{collections::HashMap, os::unix::raw::off_t};
 
 use crate::utils::{default_effects, default_opacity};
 
+use super::layout::AxisSizingMode;
 use super::{
     blend_mode::BlendMode,
     constraint::Constraint,
@@ -55,16 +56,20 @@ pub struct Frame {
     pub clips_content: bool,
     #[serde(default)]
     pub layout_mode: LayoutMode,
-    pub layout_sizing_horizontal: Option<LayoutSizingMode>,
-    pub layout_sizing_vertical: Option<LayoutSizingMode>,
-    pub layout_wrap: Option<LayoutWrap>,
-    pub primary_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
-    pub counter_axis_sizing_mode: Option<LayoutSizingMode>, // FIXED, AUTO
+    pub layout_sizing_horizontal: Option<LayoutSizingMode>, // HUG, FIXED, FILL
+    pub layout_sizing_vertical: Option<LayoutSizingMode>,   // HUG, FIXED, FILL
+    #[serde(default)]
+    pub layout_wrap: LayoutWrap,
+    #[serde(default)]
+    pub primary_axis_sizing_mode: AxisSizingMode, // FIXED, AUTO -> This property is only applicable for auto-layout frames
+    #[serde(default)]
+    pub counter_axis_sizing_mode: AxisSizingMode, // FIXED, AUTO -> This property is only applicable for auto-layout frames
     #[serde(default)]
     pub primary_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX, SPACE_BETWEEN
     #[serde(default)]
     pub counter_axis_align_items: LayoutAlignItems, // MIN, CENTER, MAX,
-    pub counter_axis_align_content: Option<LayoutAlignContent>, // AUTO SPACE_BETWEEN
+    #[serde(default)]
+    pub counter_axis_align_content: LayoutAlignContent, // AUTO SPACE_BETWEEN
     #[serde(default)]
     pub padding_left: f32,
     #[serde(default)]
@@ -242,22 +247,38 @@ impl Frame {
             _ => "flex-start".to_string(),                   // Default LayoutAlignItems::Min
         };
 
-        let content = match self.primary_axis_align_items {
+        let justify = match self.primary_axis_align_items {
             LayoutAlignItems::Center => "center".to_string(),
             LayoutAlignItems::Max => "flex-end".to_string(),
             LayoutAlignItems::SpaceBetween => "space-between".to_string(),
             _ => "flex-start".to_string(), // Default LayoutAlignItems::Min
         };
 
+        let content = match self.counter_axis_align_content {
+            LayoutAlignContent::SpaceBetween => "space-between".to_string(),
+            LayoutAlignContent::Auto => String::new(),
+        };
+
         if !align.is_empty() {
             styles.insert("align-items".to_string(), align);
         }
 
-        if !content.is_empty() {
-            styles.insert("justify-content".to_string(), content);
+        if !justify.is_empty() {
+            styles.insert("justify-content".to_string(), justify);
+        }
+
+        if !content.is_empty() && !self.layout_wrap().is_empty() {
+            styles.insert("align-content".to_string(), content);
         }
 
         styles
+    }
+
+    pub fn layout_wrap(&self) -> String {
+        match self.layout_wrap {
+            LayoutWrap::Wrap => "wrap".to_string(),
+            LayoutWrap::NoWrap => String::new(),
+        }
     }
 
     pub fn gap(&self) -> String {
@@ -282,6 +303,48 @@ impl Frame {
         } else {
             format!("{top}px {right}px {bottom}px {left}px")
         }
+    }
+
+    pub fn sizes(&self) -> HashMap<String, String> {
+        let mut styles: HashMap<String, String> = HashMap::new();
+
+        // TODO: there's a lot of matches that repeat the same logic, maybe extract the match to a utility function??
+        let min_width: String = match self.min_width {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        };
+        let max_width: String = match self.max_width {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        };
+        let min_height: String = match self.min_height {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        };
+        let max_height: String = match self.max_height {
+            Some(x) => format!("{}px", x),
+            None => String::new(),
+        };
+
+        if !min_width.is_empty() {
+            styles.insert("min-width".to_string(), min_width);
+        }
+
+        if !max_width.is_empty() {
+            styles.insert("max-width".to_string(), max_width);
+        }
+
+        if !min_height.is_empty() {
+            styles.insert("min-height".to_string(), min_height);
+        }
+
+        if !max_height.is_empty() {
+            styles.insert("max-height".to_string(), max_height);
+        }
+
+        // TODO: width and height
+
+        styles
     }
 
     fn corner_radius(&self) -> String {
