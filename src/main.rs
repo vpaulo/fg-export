@@ -11,10 +11,10 @@ mod prelude;
 mod types;
 mod utils;
 
-async fn load(cmd: &cli::Cli) -> Result<FigmaData> {
+async fn load(figma_config: &cli::FigmaConfig) -> Result<FigmaData> {
     let document = reqwest::Client::new()
-        .get(&format!("https://api.figma.com/v1/files/{}", cmd.file))
-        .header("X-Figma-Token", cmd.token.clone())
+        .get(&format!("https://api.figma.com/v1/files/{}", figma_config.file.clone()))
+        .header("X-Figma-Token", figma_config.token.clone())
         .send()
         .await?
         .bytes()
@@ -35,8 +35,8 @@ async fn load(cmd: &cli::Cli) -> Result<FigmaData> {
 async fn main() -> Result<()> {
     let cmd = cli::Cli::parse();
 
-    let file = if !cmd.cache {
-        load(&cmd).await?
+    let file = if let Some(figma_config) = cmd.figma_config {
+        load(&figma_config).await?
     } else {
         let full_doc = std::fs::read("figma_output/cache.json")?;
         serde_json::from_slice(&full_doc)?
