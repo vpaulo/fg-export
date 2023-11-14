@@ -1,41 +1,52 @@
-Figma exporter CLI
-=======================
+# fg-export
 
-The Figma exporter CLI is a tool to generate CSS and HTML from Figma designs.
+`fg-export` is a Rust-based Command Line Interface (CLI) tool designed for converting Figma designs into HTML and CSS code. It provides an efficient way for designers and developers to transform Figma components into web-ready formats, streamlining the development process and ensuring a smooth transition from design to code.
 
-# Usage
+## Features
+**Direct Figma Integration**: Connects to Figma using an access token to fetch design data.
+**HTML & CSS Output**: Generates HTML files and CSS stylesheets based on Figma designs.
+**Responsive Design Compatibility**: Exports are responsive, adapting to different screen sizes.
+**Cache Option**: Allows for offline usage by leveraging cached Figma data.
+**Rust-Based Performance**: Built with Rust for efficiency and speed.
 
-```
-Usage: fg-xport [OPTIONS] --token <TOKEN> <FILE>
+## Installation
+Before installing `fg-export`, ensure you have Rust installed on your system. You can install `fg-export` using `cargo`:
 
-Arguments:
-  <FILE>  Figma file
-
-Options:
-  -t, --token <TOKEN>  Figma access token
-      --cache          If set, don't connect to the network, but use the `figma_output/cache.json`
-  -h, --help           Print help
-  -V, --version        Print version
-
-Examples:
-  Figma REST API call
-    $ fg-xport --token <TOKEN> <FILE>
-
-  From cache
-    $ fg-xport --token <TOKEN> --cache <FILE>
+```bash
+cargo install fg-export
 ```
 
-## Tokens - TODO
-Create css variables based on figma tokens and design tokens (https://design-tokens.github.io/community-group/format/#introduction).
-Figma variables can't be converted to css tokens without enterprise account to be able to use the REST API for Variables.
+## Usage
+Basic usage of `fg-export` requires a Figma token and the Figma file key:
 
-## TODO
-- format css files
-- create html files
-- update CLI to run from cache without passing token and file in the command
-- update CLI to generate styles with REM units insted of PX
-- add auto layout styles
-- create children styles, childrean need to know the parent because of auto layout and other dependencies in styles
-- update CLI to pass a prefix for the components (ex: prefix=x for component button should create class: x-button), maybe this makes more sense for webcomponents
-- generate webcomponents from styles and markup, markup generation will be different
-- maybe update CLI to have a param to say that we want to generate webcomponents, or decide in a type of generation??
+```bash
+fg-export --token YOUR_FIGMA_TOKEN YOUR_FIGMA_FILE_KEY
+```
+
+### Options
+* `-t, --token <TOKEN>`: Your Figma access token.
+* `--cache`: Use cached data from figma_output/cache.json instead of fetching from the network.
+* `-h, --help`: Display help information.
+* `-V, --version`: Display the version of the tool.
+
+### Examples
+* Exporting from Figma API:
+
+```bash
+fg-export --token YOUR_FIGMA_TOKEN YOUR_FIGMA_FILE_KEY
+```
+
+* Exporting using cache:
+
+```bash
+fg-export --token YOUR_FIGMA_TOKEN --cache YOUR_FIGMA_FILE_KEY
+```
+
+## Contributing
+We welcome contributions! Please refer to our contributing guidelines for detailed information on how you can contribute to `fg-export`.
+
+## License
+`fg-export` is licensed under the MIT License. See LICENSE for more information.
+
+## Acknowledgments
+Thanks to the Figma community and all the contributors who have made `fg-export` possible.
