@@ -85,42 +85,47 @@ pub enum Node {
     FRAME(Frame),
     GROUP(Frame),
     VECTOR(VectorCommon),
+    #[serde(rename_all = "camelCase")]
     BOOLEAN_OPERATION {
         #[serde(flatten)]
         vector: VectorCommon,
-        booleanOperation: String,
+        boolean_operation: String,
     },
     STAR(VectorCommon),
     LINE(VectorCommon),
     ELLIPSE(VectorCommon),
     REGULAR_POLYGON(VectorCommon),
+    #[serde(rename_all = "camelCase")]
     RECTANGLE {
         #[serde(flatten)]
         vector: VectorCommon,
-        cornerRadius: Option<f32>,
-        rectangleCornerRadii: Option<[f32; 4]>,
+        corner_radius: Option<f32>,
+        rectangle_corner_radii: Option<[f32; 4]>,
     },
+    #[serde(rename_all = "camelCase")]
     TEXT {
         #[serde(flatten)]
         vector: VectorCommon,
         characters: String,
         style: TypeStyle,
-        characterStyleOverrides: Vec<f32>,
+        character_style_overrides: Vec<f32>,
     },
+    #[serde(rename_all = "camelCase")]
     SLICE {
         #[serde(flatten)]
         node: NodeCommon,
         #[serde(default)]
-        exportSettings: Vec<ExportSetting>,
-        absoluteBoundingBox: Rectangle,
+        export_settings: Vec<ExportSetting>,
+        absolute_bounding_box: Rectangle,
         size: Option<Vector>,
-        relativeTransform: Option<Transform>,
+        relative_transform: Option<Transform>,
     },
     COMPONENT(Frame),
+    #[serde(rename_all = "camelCase")]
     INSTANCE {
         #[serde(flatten)]
         frame: Frame,
-        componentId: String,
+        component_id: String,
     },
 }
 
