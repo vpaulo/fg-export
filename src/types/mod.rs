@@ -22,3 +22,7 @@ pub mod styles;
 pub mod text;
 pub mod transform;
 pub mod vector;
+pub mod easing_type;
+pub mod path;
+pub mod node_common;
+pub mod vector_common;

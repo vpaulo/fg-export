@@ -13,7 +13,7 @@ use super::{
         LayoutAlign, LayoutAlignContent, LayoutAlignItems, LayoutConstraint, LayoutGrid,
         LayoutMode, LayoutPositioning, LayoutSizingMode, LayoutWrap,
     },
-    node::NodeCommon,
+    node_common::NodeCommon,
     overflow_direction::OverflowDirection,
     paint::Paint,
     rectangle::Rectangle,
