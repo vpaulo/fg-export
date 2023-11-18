@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::prelude::*;
+use crate::{prelude::*, utils::components::generate};
 use clap::Parser;
 use types::file::FigmaData;
 
@@ -13,7 +13,10 @@ mod utils;
 
 async fn load(figma_config: &cli::FigmaConfig) -> Result<FigmaData> {
     let document = reqwest::Client::new()
-        .get(&format!("https://api.figma.com/v1/files/{}", figma_config.file.clone()))
+        .get(&format!(
+            "https://api.figma.com/v1/files/{}",
+            figma_config.file.clone()
+        ))
         .header("X-Figma-Token", figma_config.token.clone())
         .send()
         .await?
@@ -56,6 +59,10 @@ async fn main() -> Result<()> {
     // print!(">>> {:?}", serde_json::to_string_pretty(&file.document.common().children.get(0)).unwrap());
     // TODO: maybe add page filter to the cli??
     // TODO: maybe add option to choose between pixels or rems
+
+    // Make sure output folder exists
+    std::fs::create_dir_all("figma_output/css")?;
+
     let pages = file.document.common().children.iter();
     for page in pages {
         let components = page
@@ -64,113 +71,19 @@ async fn main() -> Result<()> {
             .iter()
             .filter_map(|node| node.is_component());
         for component in components {
-            let mut styles = HashMap::new();
-            println!(">>> name: {:?}", component.node.name);
-            println!(">>> kebab: {:?}", component.get_name());
-
-            if !component.node.visible {
-                styles.insert("display".to_string(), "none".to_string());
-            }
-
-            if component.clips_content {
-                styles.insert("overflow".to_string(), "hidden".to_string());
-            }
-
-            // TODO: Auto layout messes the widths heights
-            if component.layout_mode.is_none() {
-                if !component.width().is_empty() {
-                    styles.insert("width".to_string(), component.width());
-                }
-                if !component.height().is_empty() {
-                    styles.insert("height".to_string(), component.height());
-                }
-            } else if component.layout_mode.is_auto_layout() {
-                // TODO: should we do inline-flex??
-                if component.node.visible {
-                    styles.insert("display".to_string(), "flex".to_string());
-                }
-
-                if !component.sizes().is_empty() {
-                    for (key, value) in component.sizes().iter() {
-                        styles.insert(key.to_string(), value.to_string());
-                    }
-                }
-
-                if !component.layout_wrap().is_empty() {
-                    styles.insert("flex-wrap".to_string(), component.layout_wrap());
-                }
-
-                if component.layout_mode.is_vertical() {
-                    styles.insert("flex-direction".to_string(), "column".to_string());
-                }
-
-                if !component.alignment().is_empty() {
-                    for (key, value) in component.alignment().iter() {
-                        styles.insert(key.to_string(), value.to_string());
-                    }
-                }
-
-                if !component.gap().is_empty() {
-                    styles.insert("gap".to_string(), component.gap());
-                }
-
-                if !component.padding().is_empty() {
-                    styles.insert("padding".to_string(), component.padding());
-                }
-            }
-
-            // Rotation only works well for 90 * n degrees, for other values like 45deg figma changesn the sizes of width and height.
-            if !component.rotation().is_empty() {
-                styles.insert("transform".to_string(), component.rotation());
-            }
-
-            if !component.border_radius().is_empty() {
-                styles.insert("border-radius".to_string(), component.border_radius());
-            }
-
-            if !component.border().is_empty() {
-                for (key, value) in component.border().iter() {
-                    styles.insert(key.to_string(), value.to_string());
-                }
-            }
-
-            if !component.background().is_empty() {
-                styles.insert("background".to_string(), component.background());
-            }
-
-            if !component.box_shadow().is_empty() {
-                styles.insert("box-shadow".to_string(), component.box_shadow());
-            }
-
-            if !component.blur().is_empty() {
-                styles.insert("filter".to_string(), component.blur());
-            }
-
-            if !component.background_blur().is_empty() {
-                styles.insert("backdrop-filter".to_string(), component.background_blur());
-            }
-
-            // GENERATE CSS
-            println!(">>> styles: {:?}", styles);
-
-            let css_classes = format!(".{}", component.get_name());
-            let mut rules = String::new();
-
-            for (key, value) in styles.iter() {
-                rules.push_str(format!("{key}: {value};").as_str());
-            }
+            generate(component);
 
             // TODO: GENERATE HTML
+            // TODO: GENERATE WEB COMPONENTS
             // TODO: GENERATE TOKENS
             // TODO: GENERATE DESIGN_TOKENS
 
             // TODO: Find/implement better CSS formatter
-            println!("{}", format!("{css_classes} {{{rules}}}"));
-            std::fs::create_dir_all("figma_output/css")?;
-            std::fs::write(
-                format!("figma_output/css/{}.css", component.get_name()),
-                format!("{css_classes} {{{rules}}}"),
-            )?;
+            // println!("{}", format!("{css_classes} {{{rules}}}"));
+            // std::fs::write(
+            //     format!("figma_output/css/{}.css", component.get_name()),
+            //     format!("{css_classes} {{{rules}}}"),
+            // )?;
         }
     }
 

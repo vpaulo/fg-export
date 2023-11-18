@@ -76,12 +76,34 @@ impl LayoutMode {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LayoutSizingMode {
+    #[default]
     Hug,
     Fixed,
     Auto,
+}
+
+impl LayoutSizingMode {
+    pub fn is_hug(&self) -> bool {
+        match self {
+            LayoutSizingMode::Hug => true,
+            _ => false,
+        }
+    }
+    pub fn is_fixed(&self) -> bool {
+        match self {
+            LayoutSizingMode::Fixed => true,
+            _ => false,
+        }
+    }
+    pub fn is_fill(&self) -> bool {
+        match self {
+            LayoutSizingMode::Auto => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

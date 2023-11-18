@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use super::{
     blend_mode::BlendMode,
-    colour::Colour,
     effect::Effect,
     frame::{ExportSetting, Frame, StrokeAlign},
-    layout::{LayoutAlign, LayoutConstraint},
+    layout::LayoutConstraint,
     paint::Paint,
     rectangle::Rectangle,
     styles::{StyleType, TypeStyle},
@@ -160,7 +159,17 @@ impl Node {
 
     pub fn is_component(&self) -> Option<&Frame> {
         match self {
-            Node::COMPONENT(Frame) => Some(Frame),
+            Node::COMPONENT(frame) => Some(frame),
+            _ => None,
+        }
+    }
+
+    pub fn is_frame(&self) -> Option<&Frame> {
+        match self {
+            Node::COMPONENT(frame)
+            | Node::INSTANCE { frame, .. }
+            | Node::FRAME(frame)
+            | Node::GROUP(frame) => Some(frame),
             _ => None,
         }
     }

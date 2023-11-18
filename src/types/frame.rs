@@ -56,8 +56,10 @@ pub struct Frame {
     pub clips_content: bool,
     #[serde(default)]
     pub layout_mode: LayoutMode,
-    pub layout_sizing_horizontal: Option<LayoutSizingMode>, // HUG, FIXED, FILL
-    pub layout_sizing_vertical: Option<LayoutSizingMode>,   // HUG, FIXED, FILL
+    #[serde(default)]
+    pub layout_sizing_horizontal: LayoutSizingMode, // HUG, FIXED, FILL
+    #[serde(default)]
+    pub layout_sizing_vertical: LayoutSizingMode, // HUG, FIXED, FILL
     #[serde(default)]
     pub layout_wrap: LayoutWrap,
     #[serde(default)]
@@ -87,7 +89,7 @@ pub struct Frame {
     pub layout_positioning: Option<LayoutPositioning>, // AUTO ABSOLUTE
     pub item_reverse_z_index_boolean: Option<bool>,
     pub strokes_included_in_layout: Option<bool>,
-    layout_grids: Option<Vec<LayoutGrid>>,
+    pub layout_grids: Option<Vec<LayoutGrid>>,
     pub overflow_direction: Option<OverflowDirection>,
     #[serde(default = "default_effects")]
     pub effects: Vec<Effect>,
@@ -343,6 +345,42 @@ impl Frame {
         }
 
         // TODO: width and height
+        // "layoutMode": "HORIZONTAL",
+        // "layoutSizingHorizontal": "HUG", width
+        // "layoutSizingVertical": "HUG", height
+        // "primaryAxisSizingMode": "AUTO",
+        // "counterAxisSizingMode": "AUTO",
+        // self.layout_mode.is_horizontal()
+        // self.layout_mode.is_vertical()
+        // self.layout_mode.is_none()
+        // self.layout_sizing_horizontal.is_hug()
+        // self.layout_sizing_horizontal.is_fixed()
+        // self.layout_sizing_horizontal.is_fill()
+        // self.layout_sizing_vertical.is_hug()
+        // self.layout_sizing_vertical.is_fixed()
+        // self.layout_sizing_vertical.is_fill()
+        // self.primary_axis_sizing_mode
+        // self.counter_axis_sizing_mode
+
+        if self.layout_sizing_horizontal.is_hug() {
+            styles.insert("width".to_string(), "fit-content".to_string());
+        }
+        if self.layout_sizing_horizontal.is_fixed() {
+            styles.insert("width".to_string(), self.width());
+        }
+        if self.layout_sizing_horizontal.is_fill() {
+            styles.insert("width".to_string(), "100%".to_string());
+        }
+
+        if self.layout_sizing_vertical.is_hug() {
+            styles.insert("height".to_string(), "fit-content".to_string());
+        }
+        if self.layout_sizing_vertical.is_fixed() {
+            styles.insert("height".to_string(), self.width());
+        }
+        if self.layout_sizing_vertical.is_fill() {
+            styles.insert("height".to_string(), "100%".to_string());
+        }
 
         styles
     }

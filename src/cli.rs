@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::Parser;
 
 #[derive(Debug, Parser, Clone)]
 pub struct FigmaConfig {

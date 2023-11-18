@@ -39,7 +39,7 @@ fg-export --token YOUR_FIGMA_TOKEN YOUR_FIGMA_FILE_KEY
 * Exporting using cache:
 
 ```bash
-fg-export --token YOUR_FIGMA_TOKEN --cache YOUR_FIGMA_FILE_KEY
+fg-export --cache
 ```
 
 ## Contributing
@@ -58,7 +58,6 @@ Figma variables can't be converted to css tokens without enterprise account to b
 ## TODO
 - format css files
 - create html files
-- update CLI to run from cache without passing token and file in the command
 - update CLI to generate styles with REM units insted of PX
 - add auto layout styles
 - create children styles, childrean need to know the parent because of auto layout and other dependencies in styles

@@ -1,5 +1,7 @@
 use crate::types::effect::Effect;
 
+pub mod components;
+
 pub fn default_visible() -> bool {
     true
 }
