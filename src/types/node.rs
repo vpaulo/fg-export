@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use super::{
     blend_mode::BlendMode,
     effect::Effect,
@@ -12,68 +10,10 @@ use super::{
     styles::{StyleType, TypeStyle},
     transform::Transform,
     vector::Vector,
+    node_common::NodeCommon,
+    vector_common::VectorCommon,
 };
-use crate::utils::{self, default_opacity};
 use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum EasingType {
-    EaseIn,
-    EaseOut,
-    EaseInAndOut,
-    Linear,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, Hash)]
-#[serde(rename_all = "camelCase")]
-pub struct Path {
-    pub path: String,
-    pub winding_rule: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Default, Clone)]
-pub struct NodeCommon {
-    pub id: String,
-    pub name: String,
-    #[serde(default = "utils::default_visible")]
-    pub visible: bool,
-    #[serde(default)]
-    pub children: Vec<Node>,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct VectorCommon {
-    #[serde(flatten)]
-    pub node: NodeCommon,
-    pub locked: Option<bool>,
-    pub export_settings: Option<Vec<ExportSetting>>,
-    pub blend_mode: BlendMode,
-    pub preserve_ratio: Option<bool>,
-    pub constraints: LayoutConstraint,
-    pub transition_node_id: Option<String>,
-    pub transition_duration: Option<f32>,
-    pub transition_easing: Option<EasingType>,
-    #[serde(default = "default_opacity")]
-    pub opacity: f32,
-    pub absolute_bounding_box: Option<Rectangle>,
-    pub effects: Vec<Effect>,
-    pub size: Option<Vector>,
-    pub relative_transform: Option<Transform>,
-    pub is_mask: Option<bool>,
-    pub fills: Vec<Paint>,
-    pub fill_geometry: Option<Vec<Path>>,
-    #[serde(default)]
-    pub strokes: Vec<Paint>,
-    pub stroke_weight: Option<f32>,
-    pub stroke_align: Option<StrokeAlign>,
-    #[serde(default)]
-    pub stroke_dashes: Vec<f32>,
-    pub stroke_miter_angle: Option<f32>,
-    pub stroke_geometry: Option<Vec<Path>>,
-    pub styles: Option<HashMap<StyleType, String>>,
-}
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(tag = "type")]

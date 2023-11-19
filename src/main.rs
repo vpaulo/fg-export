@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{prelude::*, utils::components::generate};
 use clap::Parser;
 use types::file::FigmaData;
