@@ -1,22 +1,24 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
-use std::f32::consts::PI;
-use std::{collections::HashMap, os::unix::raw::off_t};
+use std::collections::HashMap;
 
-use crate::utils::{default_effects, default_opacity};
+use crate::utils::default_effects;
 
 use super::layout::AxisSizingMode;
 use super::{
     blend_mode::BlendMode,
-    constraint::Constraint,
-    effect::{self, Effect, EffectType},
+    effect::{Effect, EffectType},
+    export_settings::ExportSetting,
     layout::{
         LayoutAlign, LayoutAlignContent, LayoutAlignItems, LayoutConstraint, LayoutGrid,
         LayoutMode, LayoutPositioning, LayoutSizingMode, LayoutWrap,
     },
     node::NodeCommon,
+    overflow_direction::OverflowDirection,
     paint::Paint,
     rectangle::Rectangle,
+    stroke_align::StrokeAlign,
+    stroke_weights::StrokeWeights,
     styles::StyleType,
     transform::Transform,
     vector::Vector,
@@ -570,69 +572,4 @@ mod frame_tests {
             ""
         );
     }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum StrokeAlign {
-    Inside,
-    Outside,
-    #[default]
-    Center,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
-pub struct StrokeWeights {
-    pub top: f32,
-    pub right: f32,
-    pub bottom: f32,
-    pub left: f32,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct ExportSetting {
-    pub suffix: String,
-    pub format: ExportFormat,
-    pub constraint: Constraint,
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, Copy, Default)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum OverflowDirection {
-    #[default]
-    None,
-    HorizontalScrolling,
-    VerticalScrolling,
-    HorizontalAndVerticalScrolling,
-}
-
-impl OverflowDirection {
-    pub fn scrolls_horizontal(&self) -> bool {
-        match self {
-            OverflowDirection::HorizontalScrolling => true,
-            OverflowDirection::HorizontalAndVerticalScrolling => true,
-            _ => false,
-        }
-    }
-    pub fn scrolls_vertical(&self) -> bool {
-        match self {
-            OverflowDirection::VerticalScrolling => true,
-            OverflowDirection::HorizontalAndVerticalScrolling => true,
-            _ => false,
-        }
-    }
-    pub fn scrolls(&self) -> bool {
-        match self {
-            OverflowDirection::None => false,
-            _ => true,
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum ExportFormat {
-    Jpg,
-    Png,
-    Svg,
 }

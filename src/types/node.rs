@@ -3,10 +3,12 @@ use std::collections::HashMap;
 use super::{
     blend_mode::BlendMode,
     effect::Effect,
-    frame::{ExportSetting, Frame, StrokeAlign},
+    export_settings::ExportSetting,
+    frame::Frame,
     layout::LayoutConstraint,
     paint::Paint,
     rectangle::Rectangle,
+    stroke_align::StrokeAlign,
     styles::{StyleType, TypeStyle},
     transform::Transform,
     vector::Vector,
