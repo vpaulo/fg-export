@@ -46,6 +46,8 @@ pub struct Frame {
     pub preserve_ratio: bool,
     pub constraints: LayoutConstraint,
     pub layout_align: Option<LayoutAlign>,
+    #[serde(default)]
+    pub layout_grow: f32,
     pub opacity: Option<f32>,
     pub absolute_bounding_box: Option<Rectangle>,
     // pub absolute_render_bounds: Option<Rectangle>, // this returns the bounds of the frame regarding the file, so it's not needed
@@ -378,7 +380,7 @@ impl Frame {
             styles.insert("height".to_string(), "fit-content".to_string());
         }
         if self.layout_sizing_vertical.is_fixed() {
-            styles.insert("height".to_string(), self.width());
+            styles.insert("height".to_string(), self.height());
         }
         if self.layout_sizing_vertical.is_fill() {
             styles.insert("height".to_string(), "100%".to_string());

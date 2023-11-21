@@ -59,7 +59,7 @@ async fn main() -> Result<()> {
     // TODO: maybe add option to choose between pixels or rems
 
     // Make sure output folder exists
-    std::fs::create_dir_all("figma_output/css")?;
+    std::fs::create_dir_all("figma_output/components")?;
 
     let pages = file.document.common().children.iter();
     for page in pages {

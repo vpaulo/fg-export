@@ -19,8 +19,10 @@ pub fn generate(component: &Frame) {
         }
     }
 
+    let _ = std::fs::create_dir_all(format!("figma_output/components/{name}", name = component.get_name()));
+
     let _ = std::fs::write(
-        format!("figma_output/css/{}.css", component.get_name()),
+        format!("figma_output/components/{name}/{name}.css", name = component.get_name()),
         format!("{}", styles.join("\n")),
     );
 
@@ -48,19 +50,52 @@ fn css(frame: Frame, parent: Frame) -> String {
 
     // TODO: Auto layout messes the widths heights
     if frame.layout_mode.is_none() {
-        // TODO: when the parent is auto-layout there's some specific cases
-        if !frame.width().is_empty() {
-            styles.insert("width".to_string(), frame.width());
-        }
-        if !frame.height().is_empty() {
-            styles.insert("height".to_string(), frame.height());
+
+        // TODO: improve this IFs later
+        if parent.layout_mode.is_auto_layout() {
+
+            // TODO: Create more components to test all possibilities for frame.layout_mode.is_none() and parent.layout_mode.is_auto_layout(), the other cases seem ok so far
+            // TODO: layout_align and layout_grow will have an impact on the with and height only applicable for when parent is auto layout
+
+
+            if frame.layout_sizing_horizontal.is_fixed() {
+                if !frame.width().is_empty() {
+                    styles.insert("width".to_string(), frame.width());
+                }
+            }
+
+            if frame.layout_sizing_horizontal.is_fill() {
+                styles.insert("flex".to_string(), "1 0 0".to_string());
+            }
+
+
+            if frame.layout_sizing_vertical.is_fixed() {
+                if !frame.height().is_empty() {
+                    styles.insert("height".to_string(), frame.height());
+                }
+            }
+
+            if frame.layout_sizing_vertical.is_fill() {
+                styles.insert("align-self".to_string(), "stretch".to_string());
+            }
+
+            if frame.layout_sizing_horizontal.is_fixed() {
+                styles.insert("flex-shrink".to_string(), "0".to_string());
+            }
+        } else {
+            if !frame.width().is_empty() {
+                styles.insert("width".to_string(), frame.width());
+            }
+            if !frame.height().is_empty() {
+                styles.insert("height".to_string(), frame.height());
+            }
         }
 
-        if parent.layout_mode.is_auto_layout() {
-            styles.insert("flex-shrink".to_string(), "0".to_string());
-        }
+
+
+
+
     } else if frame.layout_mode.is_auto_layout() {
-        // TODO: should we do inline-flex??
         if frame.node.visible {
             styles.insert("display".to_string(), "flex".to_string());
         }
@@ -128,6 +163,7 @@ fn css(frame: Frame, parent: Frame) -> String {
     let css_classes = format!("{parent_classes}.{}", frame.get_name());
     let mut rules = String::new();
 
+    // TODO: use Askama for templating, to create css, html and js files
     for (key, value) in styles.iter() {
         rules.push_str(format!("{key}: {value};").as_str());
     }

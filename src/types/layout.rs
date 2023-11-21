@@ -82,7 +82,8 @@ pub enum LayoutSizingMode {
     #[default]
     Hug,
     Fixed,
-    Auto,
+    Auto, // TODO: this may not be needed??
+    Fill,
 }
 
 impl LayoutSizingMode {
@@ -101,6 +102,7 @@ impl LayoutSizingMode {
     pub fn is_fill(&self) -> bool {
         match self {
             LayoutSizingMode::Auto => true,
+            LayoutSizingMode::Fill => true,
             _ => false,
         }
     }
