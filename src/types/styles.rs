@@ -18,7 +18,7 @@ use super::{
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TypeStyle {
-    pub font_family: Option<String>,
+    pub font_family: String,
     pub font_post_script_name: Option<String>,
     #[serde(default = "default_paragraph_spacing")]
     pub paragraph_spacing: f32,
@@ -49,12 +49,22 @@ pub struct TypeStyle {
     // pub hyperlink: Option<Hyperlink>,
     #[serde(default)]
     pub opentype_flags: HashMap<String, u32>,
-    pub line_height_px: f32,
+    // pub line_height_px: f32,
     // #[serde(default = "default_line_height_percent")]
     // pub line_height_percent: f32,
     #[serde(default = "default_line_height_percent")]
     pub line_height_percent_font_size: f32,
-    pub line_height_unit: LineHeightUnit,
+    // pub line_height_unit: LineHeightUnit,
+}
+
+impl TypeStyle {
+    pub fn line_height(&self) -> f32 {
+        if self.line_height_percent_font_size == 0.0 {
+            1.0
+        } else {
+            self.line_height_percent_font_size / 100.0
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash)]

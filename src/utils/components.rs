@@ -1,4 +1,4 @@
-use crate::types::frame::Frame;
+use crate::types::{frame::Frame, vector_common::VectorCommon, styles::TypeStyle};
 use std::collections::HashMap;
 
 use askama::Template;
@@ -25,6 +25,9 @@ pub fn generate(component: &Frame) {
         if child.is_frame().is_some() {
             let frame = child.is_frame().unwrap();
             styles.push(css(frame.clone(), component.clone()));
+        } else if child.is_text().is_some() {
+            let (vector, style) = child.is_text().unwrap();
+            styles.push(text(vector, style, component.clone()));
         }
     }
 
@@ -45,7 +48,7 @@ pub fn generate(component: &Frame) {
 }
 
 fn css(frame: Frame, parent: Frame) -> String {
-    let mut styles = HashMap::new();
+    let mut styles: HashMap<String, String> = HashMap::new();
     println!(">>> name: {:?}", frame.node.name);
     println!(">>> kebab: {:?}", frame.get_name());
 
@@ -129,6 +132,54 @@ fn css(frame: Frame, parent: Frame) -> String {
     }
 
     let css_classes = format!("{parent_classes}.{}", frame.get_name());
+
+    let css = CssTemplate {
+        classes: &css_classes,
+        rules: &styles,
+    };
+    println!("{}", css.render().unwrap());
+
+    css.render().unwrap()
+}
+
+fn text(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
+    let mut styles: HashMap<String, String> = HashMap::new();
+
+    let parent_classes = if !parent.get_name().is_empty() {
+        format!(".{} ", parent.get_name())
+    } else {
+        String::new()
+    };
+
+
+    if !vector.text_colour().is_empty() {
+        styles.insert("color".to_string(), vector.text_colour());
+    }
+
+    if !style.font_family.is_empty() {
+        styles.insert("font-family".to_string(), style.font_family.to_string());
+    }
+
+    if style.font_size != 0.0 {
+        styles.insert("font-size".to_string(), format!("{:.0}px", style.font_size));
+    }
+
+    if style.font_weight != 0.0 {
+        styles.insert("font-weight".to_string(), format!("{:.0}", style.font_weight));
+    }
+
+    if style.line_height() > 0.0 {
+        styles.insert("line-height".to_string(), format!("{:.0}", style.line_height()));
+    }
+
+
+
+
+
+
+
+
+    let css_classes = format!("{parent_classes}.{}", vector.get_name());
 
     let css = CssTemplate {
         classes: &css_classes,

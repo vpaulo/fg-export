@@ -1,14 +1,9 @@
 use super::{
-    blend_mode::BlendMode,
-    effect::Effect,
     export_settings::ExportSetting,
     frame::Frame,
-    layout::LayoutConstraint,
     node_common::NodeCommon,
-    paint::Paint,
     rectangle::Rectangle,
-    stroke_align::StrokeAlign,
-    styles::{StyleType, TypeStyle},
+    styles::{TypeStyle},
     transform::Transform,
     vector::Vector,
     vector_common::VectorCommon,
@@ -117,6 +112,15 @@ impl Node {
             | Node::INSTANCE { frame, .. }
             | Node::FRAME(frame)
             | Node::GROUP(frame) => Some(frame),
+            _ => None,
+        }
+    }
+
+    pub fn is_text(&self) -> Option<(&VectorCommon, &TypeStyle)> {
+        match self {
+            Node::TEXT { vector, style, .. } => Some(
+                (vector, style)
+            ),
             _ => None,
         }
     }

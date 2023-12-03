@@ -7,6 +7,7 @@ use super::{
 use crate::utils::default_opacity;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use convert_case::{Case, Casing};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -39,4 +40,26 @@ pub struct VectorCommon {
     pub stroke_miter_angle: Option<f32>,
     pub stroke_geometry: Option<Vec<Path>>,
     pub styles: Option<HashMap<StyleType, String>>,
+}
+
+impl VectorCommon {
+    pub fn get_name(&self) -> String {
+        self.node.name.to_case(Case::Kebab)
+    }
+
+    pub fn text_colour(&self) -> String {
+        for paint in self.fills.iter() {
+            if paint.visible && paint.data.get_solid().is_some() {
+                // TODO: get colours, maybe move this logic to get_solid
+                // TODO: build string for when there's multiple backgrounds
+                // Multiple Solid backgrounds converts to a linear gradient, for now we select the first one passing the condition.
+                return match paint.data.get_solid() {
+                    Some(c) => c.rgba(),
+                    None => String::new(),
+                };
+            }
+        }
+
+        return String::new();
+    }
 }
