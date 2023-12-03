@@ -1,5 +1,14 @@
-use crate::types::{frame::Frame, layout::LayoutAlign};
+use crate::types::frame::Frame;
 use std::collections::HashMap;
+
+use askama::Template;
+
+#[derive(Template)]
+#[template(path = "css.html")]
+struct CssTemplate<'a> {
+    classes: &'a String,
+    rules: &'a HashMap<String, String>,
+}
 
 pub fn generate(component: &Frame) {
     let mut styles: Vec<String> = Vec::new();
@@ -54,61 +63,15 @@ fn css(frame: Frame, parent: Frame) -> String {
         styles.insert("overflow".to_string(), "hidden".to_string());
     }
 
-    // TODO: Auto layout messes the widths heights
-    if frame.layout_mode.is_none() {
-        // TODO: improve this IFs later
-        if parent.layout_mode.is_auto_layout() {
-
-            if frame.layout_sizing_horizontal.is_fixed() {
-                if !frame.width().is_empty() {
-                    styles.insert("width".to_string(), frame.width());
-                }
-            }
-
-            // TODO: this sometimes get's added when not needed, check cases for shrink
-            // cmp-53, cmp-54 are adding when it does not need
-            if frame.layout_grow == 0.0 {
-                styles.insert("flex-shrink".to_string(), "0".to_string());
-            }
-
-            if frame.layout_sizing_horizontal.is_fill() {
-                if frame.layout_align.is_stretch() {
-                    styles.insert("align-self".to_string(), "stretch".to_string());
-                } else {
-                    styles.insert("flex".to_string(), "1 0 0".to_string());
-                }
-            }
-
-            if frame.layout_sizing_vertical.is_fixed() {
-                if !frame.height().is_empty() {
-                    styles.insert("height".to_string(), frame.height());
-                }
-            }
-
-            if frame.layout_sizing_vertical.is_fill() {
-                if frame.layout_grow == 1.0 {
-                    styles.insert("flex".to_string(), "1 0 0".to_string());
-                } else {
-                    styles.insert("align-self".to_string(), "stretch".to_string());
-                }
-            }
-        } else {
-            if !frame.width().is_empty() {
-                styles.insert("width".to_string(), frame.width());
-            }
-            if !frame.height().is_empty() {
-                styles.insert("height".to_string(), frame.height());
-            }
+    if !frame.sizes(parent.clone()).is_empty() {
+        for (key, value) in frame.sizes(parent.clone()).iter() {
+            styles.insert(key.to_string(), value.to_string());
         }
-    } else if frame.layout_mode.is_auto_layout() {
+    }
+
+    if frame.layout_mode.is_auto_layout() {
         if frame.node.visible {
             styles.insert("display".to_string(), "flex".to_string());
-        }
-
-        if !frame.sizes().is_empty() {
-            for (key, value) in frame.sizes().iter() {
-                styles.insert(key.to_string(), value.to_string());
-            }
         }
 
         if !frame.layout_wrap().is_empty() {
@@ -166,14 +129,12 @@ fn css(frame: Frame, parent: Frame) -> String {
     }
 
     let css_classes = format!("{parent_classes}.{}", frame.get_name());
-    let mut rules = String::new();
 
-    // TODO: use Askama for templating, to create css, html and js files
-    for (key, value) in styles.iter() {
-        rules.push_str(format!("{key}: {value};").as_str());
-    }
+    let css = CssTemplate {
+        classes: &css_classes,
+        rules: &styles,
+    };
+    println!("{}", css.render().unwrap());
 
-    println!("{}", format!("{css_classes} {{{rules}}}"));
-
-    format!("{css_classes} {{{rules}}}")
+    css.render().unwrap()
 }

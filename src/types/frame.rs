@@ -312,7 +312,7 @@ impl Frame {
         }
     }
 
-    pub fn sizes(&self) -> HashMap<String, String> {
+    pub fn sizes(&self, parent: Frame) -> HashMap<String, String> {
         let mut styles: HashMap<String, String> = HashMap::new();
 
         // TODO: there's a lot of matches that repeat the same logic, maybe extract the match to a utility function??
@@ -367,24 +367,70 @@ impl Frame {
         // self.primary_axis_sizing_mode
         // self.counter_axis_sizing_mode
 
-        if self.layout_sizing_horizontal.is_hug() {
-            styles.insert("width".to_string(), "fit-content".to_string());
-        }
-        if self.layout_sizing_horizontal.is_fixed() {
-            styles.insert("width".to_string(), self.width());
-        }
-        if self.layout_sizing_horizontal.is_fill() {
-            styles.insert("width".to_string(), "100%".to_string());
-        }
+        if self.layout_mode.is_none() {
+            if parent.layout_mode.is_auto_layout() {
+                if self.layout_sizing_horizontal.is_fixed() {
+                    if !self.width().is_empty() {
+                        styles.insert("width".to_string(), self.width());
+                    }
+                }
 
-        if self.layout_sizing_vertical.is_hug() {
-            styles.insert("height".to_string(), "fit-content".to_string());
-        }
-        if self.layout_sizing_vertical.is_fixed() {
-            styles.insert("height".to_string(), self.height());
-        }
-        if self.layout_sizing_vertical.is_fill() {
-            styles.insert("height".to_string(), "100%".to_string());
+                // TODO: this sometimes get's added when not needed, check cases for shrink
+                // cmp-53, cmp-54 are adding when it does not need
+                // so far adding this when is not necessary it does not seem to impact the styles in the browser
+                if self.layout_grow == 0.0 {
+                    styles.insert("flex-shrink".to_string(), "0".to_string());
+                }
+
+                if self.layout_sizing_horizontal.is_fill() {
+                    if self.layout_align.is_stretch() {
+                        styles.insert("align-self".to_string(), "stretch".to_string());
+                    } else {
+                        styles.insert("flex".to_string(), "1 0 0".to_string());
+                    }
+                }
+
+                if self.layout_sizing_vertical.is_fixed() {
+                    if !self.height().is_empty() {
+                        styles.insert("height".to_string(), self.height());
+                    }
+                }
+
+                if self.layout_sizing_vertical.is_fill() {
+                    if self.layout_grow == 1.0 {
+                        styles.insert("flex".to_string(), "1 0 0".to_string());
+                    } else {
+                        styles.insert("align-self".to_string(), "stretch".to_string());
+                    }
+                }
+            } else {
+                if !self.width().is_empty() {
+                    styles.insert("width".to_string(), self.width());
+                }
+                if !self.height().is_empty() {
+                    styles.insert("height".to_string(), self.height());
+                }
+            }
+        } else if self.layout_mode.is_auto_layout() {
+            if self.layout_sizing_horizontal.is_hug() {
+                styles.insert("width".to_string(), "fit-content".to_string());
+            }
+            if self.layout_sizing_horizontal.is_fixed() {
+                styles.insert("width".to_string(), self.width());
+            }
+            if self.layout_sizing_horizontal.is_fill() {
+                styles.insert("width".to_string(), "100%".to_string());
+            }
+
+            if self.layout_sizing_vertical.is_hug() {
+                styles.insert("height".to_string(), "fit-content".to_string());
+            }
+            if self.layout_sizing_vertical.is_fixed() {
+                styles.insert("height".to_string(), self.height());
+            }
+            if self.layout_sizing_vertical.is_fill() {
+                styles.insert("height".to_string(), "100%".to_string());
+            }
         }
 
         styles
