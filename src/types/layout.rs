@@ -40,6 +40,15 @@ pub enum LayoutAlign {
     Max,
 }
 
+impl LayoutAlign {
+    pub fn is_stretch(&self) -> bool {
+        match self {
+            LayoutAlign::Stretch => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum LayoutMode {

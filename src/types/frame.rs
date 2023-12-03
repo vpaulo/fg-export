@@ -45,7 +45,8 @@ pub struct Frame {
     #[serde(default)]
     pub preserve_ratio: bool,
     pub constraints: LayoutConstraint,
-    pub layout_align: Option<LayoutAlign>,
+    #[serde(default)]
+    pub layout_align: LayoutAlign,
     #[serde(default)]
     pub layout_grow: f32,
     pub opacity: Option<f32>,

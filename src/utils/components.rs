@@ -1,4 +1,4 @@
-use crate::types::frame::Frame;
+use crate::types::{frame::Frame, layout::LayoutAlign};
 use std::collections::HashMap;
 
 pub fn generate(component: &Frame) {
@@ -19,10 +19,16 @@ pub fn generate(component: &Frame) {
         }
     }
 
-    let _ = std::fs::create_dir_all(format!("figma_output/components/{name}", name = component.get_name()));
+    let _ = std::fs::create_dir_all(format!(
+        "figma_output/components/{name}",
+        name = component.get_name()
+    ));
 
     let _ = std::fs::write(
-        format!("figma_output/components/{name}/{name}.css", name = component.get_name()),
+        format!(
+            "figma_output/components/{name}/{name}.css",
+            name = component.get_name()
+        ),
         format!("{}", styles.join("\n")),
     );
 
@@ -50,13 +56,8 @@ fn css(frame: Frame, parent: Frame) -> String {
 
     // TODO: Auto layout messes the widths heights
     if frame.layout_mode.is_none() {
-
         // TODO: improve this IFs later
         if parent.layout_mode.is_auto_layout() {
-
-            // TODO: Create more components to test all possibilities for frame.layout_mode.is_none() and parent.layout_mode.is_auto_layout(), the other cases seem ok so far
-            // TODO: layout_align and layout_grow will have an impact on the with and height only applicable for when parent is auto layout
-
 
             if frame.layout_sizing_horizontal.is_fixed() {
                 if !frame.width().is_empty() {
@@ -64,10 +65,19 @@ fn css(frame: Frame, parent: Frame) -> String {
                 }
             }
 
-            if frame.layout_sizing_horizontal.is_fill() {
-                styles.insert("flex".to_string(), "1 0 0".to_string());
+            // TODO: this sometimes get's added when not needed, check cases for shrink
+            // cmp-53, cmp-54 are adding when it does not need
+            if frame.layout_grow == 0.0 {
+                styles.insert("flex-shrink".to_string(), "0".to_string());
             }
 
+            if frame.layout_sizing_horizontal.is_fill() {
+                if frame.layout_align.is_stretch() {
+                    styles.insert("align-self".to_string(), "stretch".to_string());
+                } else {
+                    styles.insert("flex".to_string(), "1 0 0".to_string());
+                }
+            }
 
             if frame.layout_sizing_vertical.is_fixed() {
                 if !frame.height().is_empty() {
@@ -76,11 +86,11 @@ fn css(frame: Frame, parent: Frame) -> String {
             }
 
             if frame.layout_sizing_vertical.is_fill() {
-                styles.insert("align-self".to_string(), "stretch".to_string());
-            }
-
-            if frame.layout_sizing_horizontal.is_fixed() {
-                styles.insert("flex-shrink".to_string(), "0".to_string());
+                if frame.layout_grow == 1.0 {
+                    styles.insert("flex".to_string(), "1 0 0".to_string());
+                } else {
+                    styles.insert("align-self".to_string(), "stretch".to_string());
+                }
             }
         } else {
             if !frame.width().is_empty() {
@@ -90,11 +100,6 @@ fn css(frame: Frame, parent: Frame) -> String {
                 styles.insert("height".to_string(), frame.height());
             }
         }
-
-
-
-
-
     } else if frame.layout_mode.is_auto_layout() {
         if frame.node.visible {
             styles.insert("display".to_string(), "flex".to_string());
@@ -129,7 +134,7 @@ fn css(frame: Frame, parent: Frame) -> String {
         }
     }
 
-    // Rotation only works well for 90 * n degrees, for other values like 45deg figma changesn the sizes of width and height.
+    // Rotation only works well for 90 * n degrees, for other values like 45deg figma changes the sizes of width and height.
     if !frame.rotation().is_empty() {
         styles.insert("transform".to_string(), frame.rotation());
     }

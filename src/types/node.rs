@@ -4,13 +4,13 @@ use super::{
     export_settings::ExportSetting,
     frame::Frame,
     layout::LayoutConstraint,
+    node_common::NodeCommon,
     paint::Paint,
     rectangle::Rectangle,
     stroke_align::StrokeAlign,
     styles::{StyleType, TypeStyle},
     transform::Transform,
     vector::Vector,
-    node_common::NodeCommon,
     vector_common::VectorCommon,
 };
 use serde::{Deserialize, Serialize};

@@ -1,21 +1,12 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use super::{
-    blend_mode::BlendMode,
-    effect::Effect,
-    layout::LayoutConstraint,
-    paint::Paint,
-    rectangle::Rectangle,
-    styles::{StyleType},
-    transform::Transform,
+    blend_mode::BlendMode, easing_type::EasingType, effect::Effect, export_settings::ExportSetting,
+    layout::LayoutConstraint, node_common::NodeCommon, paint::Paint, path::Path,
+    rectangle::Rectangle, stroke_align::StrokeAlign, styles::StyleType, transform::Transform,
     vector::Vector,
-    easing_type::EasingType,
-    path::Path,
-    node_common::NodeCommon,
-    export_settings::ExportSetting,
-    stroke_align::StrokeAlign
 };
 use crate::utils::default_opacity;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
