@@ -1,4 +1,6 @@
-use crate::types::{frame::Frame, vector_common::VectorCommon, styles::TypeStyle};
+use crate::types::{
+    frame::Frame, styles::TypeStyle, text::TextTruncation, vector_common::VectorCommon,
+};
 use std::collections::HashMap;
 
 use askama::Template;
@@ -145,7 +147,6 @@ fn css(frame: Frame, parent: Frame) -> String {
     }
 
     styles.join("\n")
-
 }
 
 fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
@@ -156,7 +157,6 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
     } else {
         String::new()
     };
-
 
     if !vector.text_colour().is_empty() {
         rules.insert("color".to_string(), vector.text_colour());
@@ -171,19 +171,62 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
     }
 
     if style.font_weight != 0.0 {
-        rules.insert("font-weight".to_string(), format!("{:.0}", style.font_weight));
+        rules.insert(
+            "font-weight".to_string(),
+            format!("{:.0}", style.font_weight),
+        );
     }
 
     if style.line_height() > 0.0 {
-        rules.insert("line-height".to_string(), format!("{:.0}", style.line_height()));
+        rules.insert(
+            "line-height".to_string(),
+            format!("{}", style.line_height()),
+        );
     }
 
+    if style.letter_spacing != 0.0 {
+        rules.insert(
+            "letter-spacing".to_string(),
+            format!("{:.0}px", style.letter_spacing),
+        );
+    }
 
+    // textAutoResize will tell how to set the sizes
+    // ideally run frame.sizes on this or add the missing keys if VectorCommon???
 
+    if !style.text_align().is_empty() {
+        rules.insert("text-align".to_string(), format!("{}", style.text_align()));
+    }
 
+    if !style.text_decoration().is_empty() {
+        rules.insert(
+            "text-decoration-line".to_string(),
+            format!("{}", style.text_decoration()),
+        );
+    }
 
+    if !style.text_transform().is_empty() {
+        rules.insert(
+            "text-transform".to_string(),
+            format!("{}", style.text_transform()),
+        );
+    }
 
+    if !style.font_variant().is_empty() {
+        rules.insert(
+            "font-variant".to_string(),
+            format!("{}", style.font_variant()),
+        );
+    }
 
+    if style.text_truncation == TextTruncation::Ending {
+        rules.insert("text-overflow".to_string(), "ellipsis".to_string());
+
+        if let Some(max) = style.max_lines {
+            rules.insert("-webkit-box-orient".to_string(), "vertical".to_string());
+            rules.insert("-webkit-line-clamp".to_string(), format!("{:.0}", max));
+        }
+    }
 
     let css_classes = format!("{parent_classes}.{}", vector.get_name());
 

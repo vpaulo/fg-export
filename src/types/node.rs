@@ -1,12 +1,6 @@
 use super::{
-    export_settings::ExportSetting,
-    frame::Frame,
-    node_common::NodeCommon,
-    rectangle::Rectangle,
-    styles::{TypeStyle},
-    transform::Transform,
-    vector::Vector,
-    vector_common::VectorCommon,
+    export_settings::ExportSetting, frame::Frame, node_common::NodeCommon, rectangle::Rectangle,
+    styles::TypeStyle, transform::Transform, vector::Vector, vector_common::VectorCommon,
 };
 use serde::{Deserialize, Serialize};
 
@@ -118,9 +112,7 @@ impl Node {
 
     pub fn is_text(&self) -> Option<(&VectorCommon, &TypeStyle)> {
         match self {
-            Node::TEXT { vector, style, .. } => Some(
-                (vector, style)
-            ),
+            Node::TEXT { vector, style, .. } => Some((vector, style)),
             _ => None,
         }
     }

@@ -5,9 +5,9 @@ use super::{
     vector::Vector,
 };
 use crate::utils::default_opacity;
+use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use convert_case::{Case, Casing};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]

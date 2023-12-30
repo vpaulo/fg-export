@@ -235,23 +235,12 @@ impl Frame {
     pub fn alignment(&self) -> HashMap<String, String> {
         let mut styles: HashMap<String, String> = HashMap::new();
 
-        // TODO: keeping this for we pass the parent just in case
-        // let align_items = if self.layout_mode.is_vertical() {
-        //     &self.primary_axis_align_items
-        // } else {
-        //     &self.counter_axis_align_items
-        // };
-        // let justify_content = if self.layout_mode.is_vertical() {
-        //     &self.counter_axis_align_items
-        // } else {
-        //     &self.primary_axis_align_items
-        // };
-
         let align = match self.counter_axis_align_items {
             LayoutAlignItems::Center => "center".to_string(),
             LayoutAlignItems::Max => "flex-end".to_string(),
             LayoutAlignItems::SpaceBetween => String::new(), // align items does not have space between
-            _ => "flex-start".to_string(),                   // Default LayoutAlignItems::Min
+            LayoutAlignItems::Baseline => "baseline".to_string(),
+            _ => "flex-start".to_string(), // Default LayoutAlignItems::Min
         };
 
         let justify = match self.primary_axis_align_items {
@@ -316,6 +305,7 @@ impl Frame {
         let mut styles: HashMap<String, String> = HashMap::new();
 
         // TODO: there's a lot of matches that repeat the same logic, maybe extract the match to a utility function??
+        // use if let Some(x) to add the styles instead of doing the match and then the if, see style.max_lines example
         let min_width: String = match self.min_width {
             Some(x) => format!("{}px", x),
             None => String::new(),

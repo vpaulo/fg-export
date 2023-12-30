@@ -133,6 +133,7 @@ pub enum LayoutAlignItems {
     Center,
     Max,
     SpaceBetween,
+    Baseline,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

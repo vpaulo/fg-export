@@ -57,9 +57,11 @@ Figma variables can't be converted to css tokens without enterprise account to b
 
 ## TODO
 - create html files
-- update CLI to generate styles with REM units insted of PX
-- create children styles, childrean need to know the parent because of auto layout and other dependencies in styles
+- update CLI to generate styles with REM units instead of PX
+- create children styles, children need to know the parent because of auto layout and other dependencies in styles
 - create text styles
 - update CLI to pass a prefix for the components (ex: prefix=x for component button should create class: x-button), maybe this makes more sense for webcomponents
 - generate webcomponents from styles and markup, markup generation will be different
 - maybe update CLI to have a param to say that we want to generate webcomponents, or decide in a type of generation??
+- Add size styles for Text nodes
+- generate lists markup for Text nodes

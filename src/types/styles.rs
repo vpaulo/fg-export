@@ -21,7 +21,7 @@ pub struct TypeStyle {
     pub font_family: String,
     pub font_post_script_name: Option<String>,
     #[serde(default = "default_paragraph_spacing")]
-    pub paragraph_spacing: f32,
+    pub paragraph_spacing: f32, // It does not generate any styles
     #[serde(default = "default_paragraph_indent")]
     pub paragraph_indent: f32,
     #[serde(default = "default_list_spacing")]
@@ -63,6 +63,40 @@ impl TypeStyle {
             1.0
         } else {
             self.line_height_percent_font_size / 100.0
+        }
+    }
+
+    pub fn text_align(&self) -> String {
+        match self.text_align_horizontal {
+            TextAlignHorizontal::Right => "right".to_string(),
+            TextAlignHorizontal::Center => "center".to_string(),
+            TextAlignHorizontal::Justified => "justify".to_string(),
+            _ => String::new(),
+        }
+    }
+
+    pub fn text_decoration(&self) -> String {
+        match self.text_decoration {
+            TextDecoration::Strikethrough => "strikethrough".to_string(),
+            TextDecoration::Underline => "underline".to_string(),
+            _ => String::new(),
+        }
+    }
+
+    pub fn text_transform(&self) -> String {
+        match self.text_case {
+            TextCase::Upper => "uppercase".to_string(),
+            TextCase::Lower => "lowercase".to_string(),
+            TextCase::Title => "capitalize".to_string(),
+            _ => String::new(),
+        }
+    }
+
+    pub fn font_variant(&self) -> String {
+        match self.text_case {
+            TextCase::SmallCaps => "small-caps".to_string(),
+            TextCase::SmallCapsForced => "all-small-caps".to_string(),
+            _ => String::new(),
         }
     }
 }
