@@ -21,7 +21,7 @@ pub enum TextDecoration {
     Underline,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TextAutoResize {
     #[default]

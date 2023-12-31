@@ -9,7 +9,7 @@ use askama::Template;
 #[template(path = "css.html")]
 struct CssTemplate<'a> {
     classes: &'a String,
-    rules: &'a HashMap<String, String>,
+    rules: &'a Vec<(&'a String, &'a String)>,
 }
 
 pub fn generate(component: &Frame) {
@@ -20,7 +20,7 @@ pub fn generate(component: &Frame) {
     };
 
     // GENERATE CSS
-    styles.push(css(component.clone(), parent_frame));
+    styles.push(css(component.clone(), parent_frame, String::new()));
 
     let _ = std::fs::create_dir_all(format!(
         "figma_output/components/{name}",
@@ -38,15 +38,15 @@ pub fn generate(component: &Frame) {
     println!("all: {}", format!("{}", styles.join("\n")));
 }
 
-fn css(frame: Frame, parent: Frame) -> String {
+fn css(frame: Frame, parent: Frame, classes: String) -> String {
     let mut styles: Vec<String> = Vec::new();
     let mut rules: HashMap<String, String> = HashMap::new();
 
     println!(">>> name: {:?}", frame.node.name);
     println!(">>> kebab: {:?}", frame.get_name());
 
-    let parent_classes = if !parent.get_name().is_empty() {
-        format!(".{} ", parent.get_name())
+    let parent_classes = if !classes.is_empty() {
+        format!("{} ", classes)
     } else {
         String::new()
     };
@@ -126,9 +126,12 @@ fn css(frame: Frame, parent: Frame) -> String {
 
     let css_classes = format!("{parent_classes}.{}", frame.get_name());
 
+    let mut sorted: Vec<_> = rules.iter().collect();
+    sorted.sort_by_key(|a| a.0);
+
     let css_template = CssTemplate {
-        classes: &css_classes,
-        rules: &rules,
+        classes: &css_classes.clone(),
+        rules: &sorted,
     };
     // TODO: remove this later
     println!("{}", css_template.render().unwrap());
@@ -139,21 +142,21 @@ fn css(frame: Frame, parent: Frame) -> String {
     for child in children {
         if child.is_frame().is_some() {
             let child_frame = child.is_frame().unwrap();
-            styles.push(css(child_frame.clone(), frame.clone()));
+            styles.push(css(child_frame.clone(), frame.clone(), css_classes.clone()));
         } else if child.is_text().is_some() {
             let (vector, style) = child.is_text().unwrap();
-            styles.push(text_css(vector, style, frame.clone()));
+            styles.push(text_css(vector, style, css_classes.clone()));
         }
     }
 
     styles.join("\n")
 }
 
-fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
+fn text_css(vector: &VectorCommon, style: &TypeStyle, classes: String) -> String {
     let mut rules: HashMap<String, String> = HashMap::new();
 
-    let parent_classes = if !parent.get_name().is_empty() {
-        format!(".{} ", parent.get_name())
+    let parent_classes = if !classes.is_empty() {
+        format!("{} ", classes)
     } else {
         String::new()
     };
@@ -191,8 +194,11 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
         );
     }
 
-    // textAutoResize will tell how to set the sizes
-    // ideally run frame.sizes on this or add the missing keys if VectorCommon???
+    if !vector.sizes().is_empty() {
+        for (key, value) in vector.sizes().iter() {
+            rules.insert(key.to_string(), value.to_string());
+        }
+    }
 
     if !style.text_align().is_empty() {
         rules.insert("text-align".to_string(), format!("{}", style.text_align()));
@@ -230,9 +236,12 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, parent: Frame) -> String {
 
     let css_classes = format!("{parent_classes}.{}", vector.get_name());
 
+    let mut sorted: Vec<_> = rules.iter().collect();
+    sorted.sort_by_key(|a| a.0);
+
     let css_template = CssTemplate {
         classes: &css_classes,
-        rules: &rules,
+        rules: &sorted,
     };
     // TODO: remove later
     println!("text styles: {}", css_template.render().unwrap());

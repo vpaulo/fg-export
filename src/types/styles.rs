@@ -10,8 +10,8 @@ use crate::utils::{
 use super::{
     paint::Paint,
     text::{
-        LineHeightUnit, TextAlignHorizontal, TextAlignVertical, TextAutoResize, TextCase,
-        TextDecoration, TextTruncation,
+        TextAlignHorizontal, TextAlignVertical, TextAutoResize, TextCase, TextDecoration,
+        TextTruncation,
     },
 };
 

@@ -285,6 +285,7 @@ impl Frame {
     }
 
     pub fn padding(&self) -> String {
+        // TODO: remove px for when value is 0
         let top = self.padding_top;
         let right = self.padding_right;
         let bottom = self.padding_bottom;
@@ -304,58 +305,21 @@ impl Frame {
     pub fn sizes(&self, parent: Frame) -> HashMap<String, String> {
         let mut styles: HashMap<String, String> = HashMap::new();
 
-        // TODO: there's a lot of matches that repeat the same logic, maybe extract the match to a utility function??
-        // use if let Some(x) to add the styles instead of doing the match and then the if, see style.max_lines example
-        let min_width: String = match self.min_width {
-            Some(x) => format!("{}px", x),
-            None => String::new(),
-        };
-        let max_width: String = match self.max_width {
-            Some(x) => format!("{}px", x),
-            None => String::new(),
-        };
-        let min_height: String = match self.min_height {
-            Some(x) => format!("{}px", x),
-            None => String::new(),
-        };
-        let max_height: String = match self.max_height {
-            Some(x) => format!("{}px", x),
-            None => String::new(),
-        };
-
-        if !min_width.is_empty() {
-            styles.insert("min-width".to_string(), min_width);
+        if let Some(x) = self.min_width {
+            styles.insert("min-width".to_string(), format!("{}px", x));
         }
 
-        if !max_width.is_empty() {
-            styles.insert("max-width".to_string(), max_width);
+        if let Some(x) = self.max_width {
+            styles.insert("max-width".to_string(), format!("{}px", x));
         }
 
-        if !min_height.is_empty() {
-            styles.insert("min-height".to_string(), min_height);
+        if let Some(x) = self.min_height {
+            styles.insert("min-height".to_string(), format!("{}px", x));
         }
 
-        if !max_height.is_empty() {
-            styles.insert("max-height".to_string(), max_height);
+        if let Some(x) = self.max_height {
+            styles.insert("max-height".to_string(), format!("{}px", x));
         }
-
-        // TODO: width and height
-        // "layoutMode": "HORIZONTAL",
-        // "layoutSizingHorizontal": "HUG", width
-        // "layoutSizingVertical": "HUG", height
-        // "primaryAxisSizingMode": "AUTO",
-        // "counterAxisSizingMode": "AUTO",
-        // self.layout_mode.is_horizontal()
-        // self.layout_mode.is_vertical()
-        // self.layout_mode.is_none()
-        // self.layout_sizing_horizontal.is_hug()
-        // self.layout_sizing_horizontal.is_fixed()
-        // self.layout_sizing_horizontal.is_fill()
-        // self.layout_sizing_vertical.is_hug()
-        // self.layout_sizing_vertical.is_fixed()
-        // self.layout_sizing_vertical.is_fill()
-        // self.primary_axis_sizing_mode
-        // self.counter_axis_sizing_mode
 
         if self.layout_mode.is_none() {
             if parent.layout_mode.is_auto_layout() {
