@@ -52,6 +52,7 @@ pub enum Node {
         relative_transform: Option<Transform>,
     },
     COMPONENT(Frame),
+    COMPONENT_SET(Frame),
     #[serde(rename_all = "camelCase")]
     INSTANCE {
         #[serde(flatten)]
@@ -86,6 +87,7 @@ impl Node {
             } => node,
             Node::SLICE { node, .. } => node,
             Node::COMPONENT(Frame { node, .. }) => node,
+            Node::COMPONENT_SET(Frame { node, .. }) => node,
             Node::INSTANCE {
                 frame: Frame { node, .. },
                 ..
@@ -100,9 +102,17 @@ impl Node {
         }
     }
 
+    pub fn is_component_set(&self) -> Option<&Frame> {
+        match self {
+            Node::COMPONENT_SET(frame) => Some(frame),
+            _ => None,
+        }
+    }
+
     pub fn is_frame(&self) -> Option<&Frame> {
         match self {
             Node::COMPONENT(frame)
+            | Node::COMPONENT_SET(frame)
             | Node::INSTANCE { frame, .. }
             | Node::FRAME(frame)
             | Node::GROUP(frame) => Some(frame),

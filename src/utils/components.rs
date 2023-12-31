@@ -12,7 +12,7 @@ struct CssTemplate<'a> {
     rules: &'a Vec<(&'a String, &'a String)>,
 }
 
-pub fn generate(component: &Frame) {
+pub fn generate(component: &Frame, is_component_set: bool) {
     let mut styles: Vec<String> = Vec::new();
 
     let parent_frame = Frame {
@@ -20,7 +20,12 @@ pub fn generate(component: &Frame) {
     };
 
     // GENERATE CSS
-    styles.push(css(component.clone(), parent_frame, String::new()));
+    styles.push(css(
+        component.clone(),
+        parent_frame,
+        String::new(),
+        is_component_set,
+    ));
 
     let _ = std::fs::create_dir_all(format!(
         "figma_output/components/{name}",
@@ -38,9 +43,8 @@ pub fn generate(component: &Frame) {
     println!("all: {}", format!("{}", styles.join("\n")));
 }
 
-fn css(frame: Frame, parent: Frame, classes: String) -> String {
+fn css(frame: Frame, parent: Frame, classes: String, is_component_set: bool) -> String {
     let mut styles: Vec<String> = Vec::new();
-    let mut rules: HashMap<String, String> = HashMap::new();
 
     println!(">>> name: {:?}", frame.node.name);
     println!(">>> kebab: {:?}", frame.get_name());
@@ -51,82 +55,24 @@ fn css(frame: Frame, parent: Frame, classes: String) -> String {
         String::new()
     };
 
-    if !frame.node.visible {
-        rules.insert("display".to_string(), "none".to_string());
-    }
+    // TODO: get variant names and values to create attribute styles and pseudo-classes
+    let name = frame.get_name();
 
-    if frame.clips_content {
-        rules.insert("overflow".to_string(), "hidden".to_string());
-    }
-
-    if !frame.sizes(parent.clone()).is_empty() {
-        for (key, value) in frame.sizes(parent.clone()).iter() {
-            rules.insert(key.to_string(), value.to_string());
-        }
-    }
-
-    if frame.layout_mode.is_auto_layout() {
-        if frame.node.visible {
-            rules.insert("display".to_string(), "flex".to_string());
-        }
-
-        if !frame.layout_wrap().is_empty() {
-            rules.insert("flex-wrap".to_string(), frame.layout_wrap());
-        }
-
-        if frame.layout_mode.is_vertical() {
-            rules.insert("flex-direction".to_string(), "column".to_string());
-        }
-
-        if !frame.alignment().is_empty() {
-            for (key, value) in frame.alignment().iter() {
-                rules.insert(key.to_string(), value.to_string());
-            }
-        }
-
-        if !frame.gap().is_empty() {
-            rules.insert("gap".to_string(), frame.gap());
-        }
-
-        if !frame.padding().is_empty() {
-            rules.insert("padding".to_string(), frame.padding());
-        }
-    }
-
-    // Rotation only works well for 90 * n degrees, for other values like 45deg figma changes the sizes of width and height.
-    if !frame.rotation().is_empty() {
-        rules.insert("transform".to_string(), frame.rotation());
-    }
-
-    if !frame.border_radius().is_empty() {
-        rules.insert("border-radius".to_string(), frame.border_radius());
-    }
-
-    if !frame.border().is_empty() {
-        for (key, value) in frame.border().iter() {
-            rules.insert(key.to_string(), value.to_string());
-        }
-    }
-
-    if !frame.background().is_empty() {
-        rules.insert("background".to_string(), frame.background());
-    }
-
-    if !frame.box_shadow().is_empty() {
-        rules.insert("box-shadow".to_string(), frame.box_shadow());
-    }
-
-    if !frame.blur().is_empty() {
-        rules.insert("filter".to_string(), frame.blur());
-    }
-
-    if !frame.background_blur().is_empty() {
-        rules.insert("backdrop-filter".to_string(), frame.background_blur());
+    if name.contains("=") {
+        let variants = name.split(",").filter(|x| !x.to_lowercase().ends_with("default"));
+        variants.map(|x| x.split_once("=")).for_each(|x| println!("hey ::: {:?}", x))
     }
 
     let css_classes = format!("{parent_classes}.{}", frame.get_name());
 
-    let mut sorted: Vec<_> = rules.iter().collect();
+    // Skip creating rules for component set because what we want is the children styles
+    let frame_css = if is_component_set {
+        HashMap::new()
+    } else {
+        frame.css(parent.clone())
+    };
+    
+    let mut sorted: Vec<_> = frame_css.iter().collect();
     sorted.sort_by_key(|a| a.0);
 
     let css_template = CssTemplate {
@@ -136,13 +82,21 @@ fn css(frame: Frame, parent: Frame, classes: String) -> String {
     // TODO: remove this later
     println!("{}", css_template.render().unwrap());
 
-    styles.push(css_template.render().unwrap());
+    if !is_component_set {
+        styles.push(css_template.render().unwrap());
+    }
 
     let children = frame.node.children.iter();
     for child in children {
         if child.is_frame().is_some() {
             let child_frame = child.is_frame().unwrap();
-            styles.push(css(child_frame.clone(), frame.clone(), css_classes.clone()));
+            let is_child_component_set = child.is_component_set().is_some();
+            styles.push(css(
+                child_frame.clone(),
+                frame.clone(),
+                css_classes.clone(),
+                is_child_component_set,
+            ));
         } else if child.is_text().is_some() {
             let (vector, style) = child.is_text().unwrap();
             styles.push(text_css(vector, style, css_classes.clone()));
@@ -160,6 +114,8 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, classes: String) -> String
     } else {
         String::new()
     };
+
+    let css_classes = format!("{parent_classes}.{}", vector.get_name());
 
     if !vector.text_colour().is_empty() {
         rules.insert("color".to_string(), vector.text_colour());
@@ -233,8 +189,6 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, classes: String) -> String
             rules.insert("-webkit-line-clamp".to_string(), format!("{:.0}", max));
         }
     }
-
-    let css_classes = format!("{parent_classes}.{}", vector.get_name());
 
     let mut sorted: Vec<_> = rules.iter().collect();
     sorted.sort_by_key(|a| a.0);

@@ -63,25 +63,17 @@ async fn main() -> Result<()> {
 
     let pages = file.document.common().children.iter();
     for page in pages {
-        let components = page
-            .common()
-            .children
-            .iter()
-            .filter_map(|node| node.is_component());
+        let nodes = page.common().children.iter();
+
+        let components = nodes.clone().filter_map(|node| node.is_component());
+        let component_sets = nodes.clone().filter_map(|node| node.is_component_set());
+
         for component in components {
-            generate(component);
+            generate(component, false);
+        }
 
-            // TODO: GENERATE HTML
-            // TODO: GENERATE WEB COMPONENTS
-            // TODO: GENERATE TOKENS
-            // TODO: GENERATE DESIGN_TOKENS
-
-            // TODO: Find/implement better CSS formatter
-            // println!("{}", format!("{css_classes} {{{rules}}}"));
-            // std::fs::write(
-            //     format!("figma_output/css/{}.css", component.get_name()),
-            //     format!("{css_classes} {{{rules}}}"),
-            // )?;
+        for set in component_sets {
+            generate(set, true);
         }
     }
 

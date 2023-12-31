@@ -109,7 +109,86 @@ impl Frame {
         self.node.name.to_case(Case::Kebab)
     }
 
-    pub fn width(&self) -> String {
+    pub fn css(&self, parent: Frame) -> HashMap<String, String> {
+        let mut rules: HashMap<String, String> = HashMap::new();
+
+        if !self.node.visible {
+            rules.insert("display".to_string(), "none".to_string());
+        }
+
+        if self.clips_content {
+            rules.insert("overflow".to_string(), "hidden".to_string());
+        }
+
+        if !self.sizes(parent.clone()).is_empty() {
+            for (key, value) in self.sizes(parent.clone()).iter() {
+                rules.insert(key.to_string(), value.to_string());
+            }
+        }
+
+        if self.layout_mode.is_auto_layout() {
+            if self.node.visible {
+                rules.insert("display".to_string(), "flex".to_string());
+            }
+
+            if !self.layout_wrap().is_empty() {
+                rules.insert("flex-wrap".to_string(), self.layout_wrap());
+            }
+
+            if self.layout_mode.is_vertical() {
+                rules.insert("flex-direction".to_string(), "column".to_string());
+            }
+
+            if !self.alignment().is_empty() {
+                for (key, value) in self.alignment().iter() {
+                    rules.insert(key.to_string(), value.to_string());
+                }
+            }
+
+            if !self.gap().is_empty() {
+                rules.insert("gap".to_string(), self.gap());
+            }
+
+            if !self.padding().is_empty() {
+                rules.insert("padding".to_string(), self.padding());
+            }
+        }
+
+        // Rotation only works well for 90 * n degrees, for other values like 45deg figma changes the sizes of width and height.
+        if !self.rotation().is_empty() {
+            rules.insert("transform".to_string(), self.rotation());
+        }
+
+        if !self.border_radius().is_empty() {
+            rules.insert("border-radius".to_string(), self.border_radius());
+        }
+
+        if !self.border().is_empty() {
+            for (key, value) in self.border().iter() {
+                rules.insert(key.to_string(), value.to_string());
+            }
+        }
+
+        if !self.background().is_empty() {
+            rules.insert("background".to_string(), self.background());
+        }
+    
+        if !self.box_shadow().is_empty() {
+            rules.insert("box-shadow".to_string(), self.box_shadow());
+        }
+    
+        if !self.blur().is_empty() {
+            rules.insert("filter".to_string(), self.blur());
+        }
+    
+        if !self.background_blur().is_empty() {
+            rules.insert("backdrop-filter".to_string(), self.background_blur());
+        }
+
+        rules
+    }
+
+    fn width(&self) -> String {
         match self.absolute_bounding_box {
             Some(rec) => match rec.width {
                 Some(w) => format!("{}px", w),
@@ -119,7 +198,7 @@ impl Frame {
         }
     }
 
-    pub fn height(&self) -> String {
+    fn height(&self) -> String {
         match self.absolute_bounding_box {
             Some(rec) => match rec.height {
                 Some(h) => format!("{}px", h),
@@ -129,7 +208,7 @@ impl Frame {
         }
     }
 
-    pub fn border_radius(&self) -> String {
+    fn border_radius(&self) -> String {
         if !self.corner_radius().is_empty() {
             return self.corner_radius();
         }
@@ -141,7 +220,7 @@ impl Frame {
         return String::new();
     }
 
-    pub fn background(&self) -> String {
+    fn background(&self) -> String {
         for paint in self.fills.iter() {
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: get colours, maybe move this logic to get_solid
@@ -157,7 +236,7 @@ impl Frame {
         return String::new();
     }
 
-    pub fn rotation(&self) -> String {
+    fn rotation(&self) -> String {
         match self.rotation {
             // If None or zero return empty string.
             Some(r) => {
@@ -172,7 +251,7 @@ impl Frame {
         }
     }
 
-    pub fn border(&self) -> HashMap<String, String> {
+    fn border(&self) -> HashMap<String, String> {
         // TODO: when multiple colours and sizes convert into "border-width", "border-color" and "border-style"
         if !self.border_individual().is_empty() {
             return self.border_individual();
@@ -183,7 +262,7 @@ impl Frame {
         return HashMap::new();
     }
 
-    pub fn box_shadow(&self) -> String {
+    fn box_shadow(&self) -> String {
         let effect_list: Vec<String> = self
             .effects
             .iter()
@@ -198,7 +277,7 @@ impl Frame {
         effect_list.join(", ")
     }
 
-    pub fn blur(&self) -> String {
+    fn blur(&self) -> String {
         let filter_list: Vec<String> = self
             .effects
             .iter()
@@ -215,7 +294,7 @@ impl Frame {
         }
     }
 
-    pub fn background_blur(&self) -> String {
+    fn background_blur(&self) -> String {
         let filter_list: Vec<String> = self
             .effects
             .iter()
@@ -232,7 +311,7 @@ impl Frame {
         }
     }
 
-    pub fn alignment(&self) -> HashMap<String, String> {
+    fn alignment(&self) -> HashMap<String, String> {
         let mut styles: HashMap<String, String> = HashMap::new();
 
         let align = match self.counter_axis_align_items {
@@ -270,21 +349,21 @@ impl Frame {
         styles
     }
 
-    pub fn layout_wrap(&self) -> String {
+    fn layout_wrap(&self) -> String {
         match self.layout_wrap {
             LayoutWrap::Wrap => "wrap".to_string(),
             LayoutWrap::NoWrap => String::new(),
         }
     }
 
-    pub fn gap(&self) -> String {
+    fn gap(&self) -> String {
         match self.item_spacing {
             Some(x) => format!("{}px", x),
             None => String::new(),
         }
     }
 
-    pub fn padding(&self) -> String {
+    fn padding(&self) -> String {
         // TODO: remove px for when value is 0
         let top = self.padding_top;
         let right = self.padding_right;
@@ -302,7 +381,7 @@ impl Frame {
         }
     }
 
-    pub fn sizes(&self, parent: Frame) -> HashMap<String, String> {
+    fn sizes(&self, parent: Frame) -> HashMap<String, String> {
         let mut styles: HashMap<String, String> = HashMap::new();
 
         if let Some(x) = self.min_width {
