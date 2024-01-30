@@ -24,6 +24,9 @@ use super::{
     vector::Vector,
 };
 
+// Only user action pseudo-classes
+const PSEUDO_CLASSES: [&str; 5] = ["hover", "active", "focus", "focus-visible", "focus-within"];
+
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Frame {
@@ -109,6 +112,63 @@ impl Frame {
         self.node.name.to_case(Case::Kebab)
     }
 
+    // name -> .name
+    // property=value -> [property="value"]
+    // property=value;pseudo -> [property="value"]:pseudo
+    pub fn get_classes(&self) -> String {
+        let name = self.node.name.clone();
+        let mut current_classes = String::new();
+
+        // Variant attributes/pseudo-classes
+        if name.contains(",") {
+            let variants: Vec<&str> = name.split(", ").collect();
+            let mut pseudo = String::new();
+
+            for variant in variants {
+                current_classes.push_str(&self.create_variant_classes(variant));
+                pseudo.push_str(&self.create_pseudo_classes(variant));
+            }
+
+            current_classes.push_str(&pseudo);
+        } else if name.contains("=") {
+            current_classes.push_str(&self.create_variant_classes(&name));
+            current_classes.push_str(&self.create_pseudo_classes(&name));
+        } else {
+            current_classes = format!(" .{}", self.get_name());
+        }
+
+        current_classes
+    }
+
+    fn create_variant_classes(&self, variant: &str) -> String {
+        if let Some((first, last)) = variant.split_once("=") {
+            let attribute = first.to_case(Case::Kebab);
+            let value = last.to_case(Case::Kebab);
+
+            if let Some((val, _)) = value.split_once(";") {
+                let val = val.to_case(Case::Kebab);
+                return format!("[{attribute}=\"{val}\"]");
+            } else if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
+                return format!("[{attribute}=\"{value}\"]");
+            }
+        }
+        String::new()
+    }
+
+    fn create_pseudo_classes(&self, variant: &str) -> String {
+        if let Some((_, last)) = variant.split_once("=") {
+            let value = last.to_case(Case::Kebab);
+
+            if let Some((_, pseudo)) = value.split_once(";") {
+                let pseudo = pseudo.to_case(Case::Kebab);
+                return format!(":{pseudo}");
+            } else if !value.eq("default") && PSEUDO_CLASSES.contains(&value.as_str()) {
+                return format!(":{value}");
+            }
+        }
+        String::new()
+    }
+
     pub fn css(&self, parent: Frame) -> HashMap<String, String> {
         let mut rules: HashMap<String, String> = HashMap::new();
 
@@ -172,15 +232,15 @@ impl Frame {
         if !self.background().is_empty() {
             rules.insert("background".to_string(), self.background());
         }
-    
+
         if !self.box_shadow().is_empty() {
             rules.insert("box-shadow".to_string(), self.box_shadow());
         }
-    
+
         if !self.blur().is_empty() {
             rules.insert("filter".to_string(), self.blur());
         }
-    
+
         if !self.background_blur().is_empty() {
             rules.insert("backdrop-filter".to_string(), self.background_blur());
         }

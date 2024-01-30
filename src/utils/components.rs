@@ -5,9 +5,6 @@ use std::collections::HashMap;
 
 use askama::Template;
 
-// Only user action pseudo-classes
-const PSEUDO_CLASSES: [&str; 5] = ["hover","active","focus","focus-visible","focus-within"];
-
 #[derive(Template)]
 #[template(path = "css.html")]
 struct CssTemplate<'a> {
@@ -31,14 +28,10 @@ pub fn generate(component: &Frame, is_component_set: bool) {
         is_component_set,
     ));
 
-    let _ = std::fs::create_dir_all(format!(
-        "figma_output/components/{name}"
-    ));
+    let _ = std::fs::create_dir_all(format!("figma_output/components/{name}"));
 
     let _ = std::fs::write(
-        format!(
-            "figma_output/components/{name}/{name}.css"
-        ),
+        format!("figma_output/components/{name}/{name}.css"),
         format!("{}", styles.join("\n")),
     );
 
@@ -48,8 +41,8 @@ pub fn generate(component: &Frame, is_component_set: bool) {
 fn css(frame: Frame, parent: Frame, classes: String, is_component_set: bool) -> String {
     let mut styles: Vec<String> = Vec::new();
 
-    println!(">>> name: {:?}", frame.node.name);
-    println!(">>> kebab: {:?}", frame.get_name());
+    // println!(">>> name: {:?}", frame.node.name);
+    // println!(">>> kebab: {:?}", frame.get_name());
 
     let parent_classes = if !classes.is_empty() {
         format!("{}", classes)
@@ -58,32 +51,7 @@ fn css(frame: Frame, parent: Frame, classes: String, is_component_set: bool) -> 
     };
 
     // TODO: get variant names and values to create attribute styles and pseudo-classes
-    let name = frame.get_name();
-    let mut current_classes = format!(" .{name}");
-
-    // TODO: logic for multiples properties, move this logic for utility???
-    // Variant attributes/pseudo-classes
-    if name.contains("=") {
-        let (attr, value) = name.split_once("=").unwrap(); // TODO: this will not work for multiple properties
-
-        // Properties with two values, Ex: state=selected;hover, we assume first value is the attribute value and the second will be a pseudo-class
-        if value.contains(";") {
-            // TODO: do logic for values = "default"
-            let (first, second) = value.split_once(";").unwrap();
-            current_classes = format!("[{attr}=\"{first}\"]:{second}");
-
-        // For Property with one value we ignore "default" value
-        } else if !value.to_lowercase().eq("default") {
-             if PSEUDO_CLASSES.contains(&value) {
-                current_classes = format!(":{value}");
-             } else {
-                current_classes = format!("[{attr}=\"{value}\"]");
-             }
-        } else {
-            current_classes = String::new();
-        }
-    }
-
+    let current_classes = frame.get_classes();
     let css_classes = format!("{parent_classes}{current_classes}");
 
     // Skip creating rules for component set because what we want is the children styles
@@ -92,7 +60,7 @@ fn css(frame: Frame, parent: Frame, classes: String, is_component_set: bool) -> 
     } else {
         frame.css(parent.clone())
     };
-    
+
     let mut sorted: Vec<_> = frame_css.iter().collect();
     sorted.sort_by_key(|a| a.0);
 
@@ -219,7 +187,7 @@ fn text_css(vector: &VectorCommon, style: &TypeStyle, classes: String) -> String
         rules: &sorted,
     };
     // TODO: remove later
-    println!("text styles: {}", css_template.render().unwrap());
+    // println!("text styles: {}", css_template.render().unwrap());
 
     css_template.render().unwrap()
 }
