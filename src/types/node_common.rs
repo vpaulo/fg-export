@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 
 use super::node::Node;
@@ -11,4 +12,10 @@ pub struct NodeCommon {
     pub visible: bool,
     #[serde(default)]
     pub children: Vec<Node>,
+}
+
+impl NodeCommon {
+    pub fn get_name(&self) -> String {
+        self.name.to_case(Case::Kebab)
+    }
 }

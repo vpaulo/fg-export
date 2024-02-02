@@ -1,6 +1,7 @@
-use crate::{prelude::*, utils::components::generate};
+use crate::prelude::*;
 use clap::Parser;
 use types::file::FigmaData;
+use utils::parse_components::parse;
 
 mod cli;
 mod error;
@@ -47,35 +48,10 @@ async fn main() -> Result<()> {
         return Err(error::Error::NoComponent);
     }
 
-    // TODO: this is test on typing with the new keyboard, it will take a while to get used to
-    // TODO: start parsing component styles and structure
-    // TODO: Create separate files for both generated CSS and HTMl
-    // TODO: Then create webcomponents from those generated files
-
-    // println!("body = {:?}", serde_json::to_string_pretty(&file).unwrap());
-    // print!(">>> {:?}", file.document.common().children.get(0));
-    // print!(">>> {:?}", serde_json::to_string_pretty(&file.document.common().children.get(0)).unwrap());
-    // TODO: maybe add page filter to the cli??
-    // TODO: maybe add option to choose between pixels or rems
-
     // Make sure output folder exists
     std::fs::create_dir_all("figma_output/components")?;
 
-    let pages = file.document.common().children.iter();
-    for page in pages {
-        let nodes = page.common().children.iter();
-
-        let components = nodes.clone().filter_map(|node| node.is_component());
-        let component_sets = nodes.clone().filter_map(|node| node.is_component_set());
-
-        for component in components {
-            generate(component, false);
-        }
-
-        for set in component_sets {
-            generate(set, true);
-        }
-    }
+    parse(file);
 
     Ok(())
 }

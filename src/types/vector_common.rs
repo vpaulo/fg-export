@@ -9,14 +9,15 @@ use super::{
     path::Path,
     rectangle::Rectangle,
     stroke_align::StrokeAlign,
-    styles::StyleType,
+    styles::{StyleType, TypeStyle},
+    text::TextTruncation,
     transform::Transform,
     vector::Vector,
 };
 use crate::utils::default_opacity;
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -100,8 +101,8 @@ impl VectorCommon {
         }
     }
 
-    pub fn sizes(&self) -> HashMap<String, String> {
-        let mut styles: HashMap<String, String> = HashMap::new();
+    pub fn sizes(&self) -> BTreeMap<String, String> {
+        let mut styles: BTreeMap<String, String> = BTreeMap::new();
 
         if let Some(x) = self.min_width {
             styles.insert("min-width".to_string(), format!("{}px", x));
@@ -142,5 +143,84 @@ impl VectorCommon {
         }
 
         styles
+    }
+
+    pub fn css(&self, style: &TypeStyle) -> BTreeMap<String, String> {
+        let mut rules: BTreeMap<String, String> = BTreeMap::new();
+
+        if !self.text_colour().is_empty() {
+            rules.insert("color".to_string(), self.text_colour());
+        }
+
+        if !style.font_family.is_empty() {
+            rules.insert("font-family".to_string(), style.font_family.to_string());
+        }
+
+        if style.font_size != 0.0 {
+            rules.insert("font-size".to_string(), format!("{:.0}px", style.font_size));
+        }
+
+        if style.font_weight != 0.0 {
+            rules.insert(
+                "font-weight".to_string(),
+                format!("{:.0}", style.font_weight),
+            );
+        }
+
+        if style.line_height() > 0.0 {
+            rules.insert(
+                "line-height".to_string(),
+                format!("{}", style.line_height()),
+            );
+        }
+
+        if style.letter_spacing != 0.0 {
+            rules.insert(
+                "letter-spacing".to_string(),
+                format!("{:.0}px", style.letter_spacing),
+            );
+        }
+
+        if !self.sizes().is_empty() {
+            for (key, value) in self.sizes().iter() {
+                rules.insert(key.to_string(), value.to_string());
+            }
+        }
+
+        if !style.text_align().is_empty() {
+            rules.insert("text-align".to_string(), format!("{}", style.text_align()));
+        }
+
+        if !style.text_decoration().is_empty() {
+            rules.insert(
+                "text-decoration-line".to_string(),
+                format!("{}", style.text_decoration()),
+            );
+        }
+
+        if !style.text_transform().is_empty() {
+            rules.insert(
+                "text-transform".to_string(),
+                format!("{}", style.text_transform()),
+            );
+        }
+
+        if !style.font_variant().is_empty() {
+            rules.insert(
+                "font-variant".to_string(),
+                format!("{}", style.font_variant()),
+            );
+        }
+
+        if style.text_truncation == TextTruncation::Ending {
+            rules.insert("text-overflow".to_string(), "ellipsis".to_string());
+
+            if let Some(max) = style.max_lines {
+                rules.insert("-webkit-box-orient".to_string(), "vertical".to_string());
+                rules.insert("-webkit-line-clamp".to_string(), format!("{:.0}", max));
+            }
+        }
+
+        rules
     }
 }

@@ -109,6 +109,21 @@ impl Node {
         }
     }
 
+    pub fn is_component_or_set(&self) -> Option<&Frame> {
+        match self {
+            Node::COMPONENT(frame) => Some(frame),
+            Node::COMPONENT_SET(frame) => Some(frame),
+            _ => None,
+        }
+    }
+
+    pub fn is_instance(&self) -> Option<&Frame> {
+        match self {
+            Node::INSTANCE { frame, .. } => Some(frame),
+            _ => None,
+        }
+    }
+
     pub fn is_frame(&self) -> Option<&Frame> {
         match self {
             Node::COMPONENT(frame)

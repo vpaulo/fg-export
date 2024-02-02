@@ -1,6 +1,6 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::utils::default_effects;
 
@@ -169,8 +169,8 @@ impl Frame {
         String::new()
     }
 
-    pub fn css(&self, parent: Frame) -> HashMap<String, String> {
-        let mut rules: HashMap<String, String> = HashMap::new();
+    pub fn css(&self, parent: Frame) -> BTreeMap<String, String> {
+        let mut rules: BTreeMap<String, String> = BTreeMap::new();
 
         if !self.node.visible {
             rules.insert("display".to_string(), "none".to_string());
