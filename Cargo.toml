@@ -19,3 +19,4 @@ askama = "0.12.1"
 
 [dev-dependencies]
 anyhow = "1.0"
+tempfile = "3.9.0"

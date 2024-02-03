@@ -69,8 +69,7 @@ fn generate(
             ));
         }
 
-        let children = frame.node.children.iter();
-        for child in children {
+        for child in frame.node.children.iter() {
             if let Some((vector, style)) = child.is_text() {
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
@@ -103,7 +102,44 @@ fn write_styles(name: String, styles: String) {
 
         let _ = std::fs::write(
             format!("figma_output/components/{name}/{name}.css"),
-            format!("{}", styles),
+            format!("{styles}"),
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::io::Read;
+    use tempfile;
+
+    #[test]
+    fn test_write_styles() {
+        // Create a temporary directory
+        let dir = tempfile::tempdir().unwrap();
+
+        // Set the current working directory to the temporary directory
+        std::env::set_current_dir(dir.path()).unwrap();
+
+        // Define the name and styles
+        let name = "test".to_string();
+        let styles = "body { color: red; }".to_string();
+
+        // Call the function
+        write_styles(name.clone(), styles.clone());
+
+        // Check if the styles were written to the correct file
+        let path = format!("figma_output/components/{name}/{name}.css");
+        assert!(fs::metadata(&path).is_ok());
+
+        // Read the contents of the file
+        let mut file = std::fs::File::open(&path).unwrap();
+        let mut contents = Vec::new();
+        file.read_to_end(&mut contents).unwrap();
+
+        // Convert the contents to a string and check if they match the styles
+        let contents_str = String::from_utf8(contents).unwrap();
+        assert_eq!(contents_str, styles);
     }
 }
