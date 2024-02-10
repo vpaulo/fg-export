@@ -1,0 +1,5 @@
+<{{ tag }} class="{{ classes|safe }}">
+    {%- for c in children %}
+    {{ c.render().unwrap() }}
+    {% endfor -%}
+</{{ tag }}>
