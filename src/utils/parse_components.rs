@@ -21,17 +21,8 @@ struct CssTemplate<'a> {
 struct MarkupTemplate {
     tag: String,
     classes: String,
-    level: i32,
     children: Vec<MarkupTemplate>,
 }
-
-#[derive(Debug)]
-struct ElementMarkup {
-    tag: String,
-    classes: String,
-    level: i32,
-}
-
 
 pub fn parse(file: FigmaData) {
     let components = file.components;
@@ -46,7 +37,7 @@ pub fn parse(file: FigmaData) {
 
         for node in nodes {
             if let Some(_) = node.is_component_or_set() {
-                let mut element: Vec<ElementMarkup> = Vec::new();
+                let mut element: Vec<MarkupTemplate> = Vec::new();
                 let mut styles: Vec<String> = Vec::new();
                 generate(
                     node,
@@ -54,15 +45,12 @@ pub fn parse(file: FigmaData) {
                     &String::new(),
                     &mut element,
                     &mut styles,
-                    0,
                     &components,
                     &component_sets,
                 );
 
                 write_styles(node.common().get_name(), styles.join("\n"));
-                // println!(">> {:?}", markup);
                 create_markup(node.common().get_name(), element);
-                // write_files(node.common().get_name(), markup.join("\n"));
             }
         }
     }
@@ -72,9 +60,8 @@ fn generate(
     node: &Node,
     parent_frame: &Frame,
     parent_classes: &String,
-    element: &mut Vec<ElementMarkup>,
+    element: &mut Vec<MarkupTemplate>,
     styles: &mut Vec<String>,
-    level: i32,
     components: &HashMap<String, Component>, // TODO: may not be needed, it may be needed for generating HTML
     component_sets: &HashMap<String, ComponentSet>, // TODO: may not be needed, it may be needed for generating HTML
 ) {
@@ -84,11 +71,12 @@ fn generate(
             current_classes = frame.get_classes()
         );
 
-        element.push(ElementMarkup {
+        // TODO: deal with component variants
+        let mut element_markup = MarkupTemplate {
             tag: "div".to_string(),
             classes: frame.get_name(),
-            level,
-        });
+            children: Vec::new(),
+        };
 
         if let Some(_) = node.is_component_set() {
             // println!(">> SKIP CSS");
@@ -100,7 +88,19 @@ fn generate(
             ));
         }
 
-        for child in frame.node.children.iter() {
+        // if frame.is_variant() {
+        //     println!(">> test: {:?} = {}", element.last(), frame.get_name());
+
+        //     element.push(ElementMarkup {
+        //         tag: "div".to_string(),
+        //         classes: parent_frame.get_name(),
+        //     });
+        // } else {
+            
+        // }
+
+        for (index, child) in frame.node.children.iter().enumerate() {
+            println!("index: {}", index);
             if let Some((vector, style)) = child.is_text() {
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
@@ -109,10 +109,10 @@ fn generate(
                     &text_classes,
                     &text_css.iter().collect::<Vec<(&String, &String)>>(),
                 ));
-                element.push(ElementMarkup {
+                element_markup.children.push(MarkupTemplate {
                     tag: "span".to_string(),
                     classes: vector.get_name(),
-                    level: level + 1,
+                    children: Vec::new(),
                 });
             } else if let Some(_) = child.is_instance() {
                 // println!(">> SKIP CSS");
@@ -121,14 +121,14 @@ fn generate(
                     child,
                     frame,
                     &classes,
-                    element,
+                    &mut element_markup.children,
                     styles,
-                    level + 1,
                     components,
                     component_sets,
                 );
             }
         }
+        element.push(element_markup);
     }
 }
 
@@ -138,42 +138,10 @@ fn get_styles(classes: &String, rules: &Vec<(&String, &String)>) -> String {
     css_template.render().unwrap()
 }
 
-fn create_markup(name: String, values: Vec<ElementMarkup>) {
-    let mut result: MarkupTemplate = MarkupTemplate {
-        tag: values[0].tag.clone(),
-        classes: values[0].classes.clone(),
-        level: values[0].level,
-        children: Vec::new(),
-    };
+fn create_markup(name: String, values: Vec<MarkupTemplate>) {
+    println!(">>> values: {:?}", values);
 
-    for val in &values[1..] {
-        if let Some(res) = result.children.last_mut() {
-            if res.level < val.level {
-                res.children.push(MarkupTemplate {
-                    tag: val.tag.clone(),
-                    classes: val.classes.clone(),
-                    level: val.level,
-                    children: Vec::new(),
-                });
-            } else {
-                result.children.push(MarkupTemplate {
-                    tag: val.tag.clone(),
-                    classes: val.classes.clone(),
-                    level: val.level,
-                    children: Vec::new(),
-                });
-            }
-        } else {
-            result.children.push(MarkupTemplate {
-                tag: val.tag.clone(),
-                classes: val.classes.clone(),
-                level: val.level,
-                children: Vec::new(),
-            });
-        }
-    }
-    println!("VAMOS: {:?}", result);
-    write_files(name, result.render().unwrap());
+    write_files(name, values[0].render().unwrap());
 }
 
 fn write_styles(name: String, styles: String) {

@@ -1,5 +1,5 @@
 <{{ tag }} class="{{ classes|safe }}">
     {%- for c in children %}
-    {{ c.render().unwrap() }}
-    {% endfor -%}
+    {{ c.render().unwrap()|indent(4) -}}
+    {% endfor %}
 </{{ tag }}>

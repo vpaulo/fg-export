@@ -112,9 +112,15 @@ impl Frame {
         self.node.name.to_case(Case::Kebab)
     }
 
+    pub fn is_variant(&self) -> bool {
+        self.node.name.contains("=")
+    }
+
     // name -> .name
     // property=value -> [property="value"]
+    // property=pseudo -> :pseudo
     // property=value;pseudo -> [property="value"]:pseudo
+    // property=value;class -> [property="value"].class
     pub fn get_classes(&self) -> String {
         let name = self.node.name.clone();
         let mut current_classes = String::new();
@@ -145,9 +151,14 @@ impl Frame {
             let attribute = first.to_case(Case::Kebab);
             let value = last.to_case(Case::Kebab);
 
-            if let Some((val, _)) = value.split_once(";") {
+            if let Some((val, second)) = value.split_once(";") {
                 let val = val.to_case(Case::Kebab);
-                return format!("[{attribute}=\"{val}\"]");
+                let cl: String = if !PSEUDO_CLASSES.contains(&second) {
+                    format!(".{}", second.to_case(Case::Kebab))
+                } else {
+                    String::new()
+                };
+                return format!("[{attribute}=\"{val}\"]{cl}");
             } else if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
                 return format!("[{attribute}=\"{value}\"]");
             }
