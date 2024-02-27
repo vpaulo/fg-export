@@ -1,4 +1,4 @@
-<{{ tag }} class="{{ classes|safe }}">
+<{{ tag }}{{ classes|safe }}>
     {%- for c in children %}
     {{ c.render().unwrap()|indent(4) -}}
     {% endfor %}

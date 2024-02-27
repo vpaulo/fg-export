@@ -49,8 +49,12 @@ pub fn parse(file: FigmaData) {
                     &component_sets,
                 );
 
-                write_styles(node.common().get_name(), styles.join("\n"));
-                create_markup(node.common().get_name(), element);
+                write_files(node.common().get_name(), styles.join("\n"), "css");
+                create_markup(
+                    node.common().get_name(),
+                    element,
+                    node.is_component_set().is_some(),
+                );
             }
         }
     }
@@ -71,15 +75,21 @@ fn generate(
             current_classes = frame.get_classes()
         );
 
-        // TODO: deal with component variants
+        let mut variant_parent_name = String::new();
+
+        if frame.is_variant() {
+            variant_parent_name = parent_frame.get_name();
+        }
+
+        // TODO: see how to build components compositions and select the element tag ex: when to use <button></button> instead of <div></div>
         let mut element_markup = MarkupTemplate {
             tag: "div".to_string(),
-            classes: frame.get_name(),
+            classes: frame.get_markup_attributes(variant_parent_name),
             children: Vec::new(),
         };
 
         if let Some(_) = node.is_component_set() {
-            // println!(">> SKIP CSS");
+            // println!(">> SKIP CSS: {}", frame.get_name());
         } else {
             let css = frame.css(parent_frame.clone());
             styles.push(get_styles(
@@ -88,19 +98,7 @@ fn generate(
             ));
         }
 
-        // if frame.is_variant() {
-        //     println!(">> test: {:?} = {}", element.last(), frame.get_name());
-
-        //     element.push(ElementMarkup {
-        //         tag: "div".to_string(),
-        //         classes: parent_frame.get_name(),
-        //     });
-        // } else {
-            
-        // }
-
-        for (index, child) in frame.node.children.iter().enumerate() {
-            println!("index: {}", index);
+        for child in frame.node.children.iter() {
             if let Some((vector, style)) = child.is_text() {
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
@@ -111,7 +109,7 @@ fn generate(
                 ));
                 element_markup.children.push(MarkupTemplate {
                     tag: "span".to_string(),
-                    classes: vector.get_name(),
+                    classes: format!(" class=\"{}\"", vector.get_name()),
                     children: Vec::new(),
                 });
             } else if let Some(_) = child.is_instance() {
@@ -138,30 +136,28 @@ fn get_styles(classes: &String, rules: &Vec<(&String, &String)>) -> String {
     css_template.render().unwrap()
 }
 
-fn create_markup(name: String, values: Vec<MarkupTemplate>) {
-    println!(">>> values: {:?}", values);
+fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
+    // println!(">>> values: {:?}", values);
+    let mut content = values[0].render().unwrap();
 
-    write_files(name, values[0].render().unwrap());
-}
-
-fn write_styles(name: String, styles: String) {
-    if !styles.is_empty() {
-        let _ = std::fs::create_dir_all(format!("figma_output/components/{name}"));
-
-        let _ = std::fs::write(
-            format!("figma_output/components/{name}/{name}.css"),
-            format!("{styles}"),
-        );
+    // TODO: remove duplicates or find another to build the components markup
+    if is_set {
+        content = String::new();
+        for child in &values[0].children {
+            content.push_str(&format!("{}\n", child.render().unwrap()));
+        }
     }
+
+    write_files(name, content, "html");
 }
 
-fn write_files(name: String, markup: String) {
-    if !markup.is_empty() {
+fn write_files(name: String, content: String, file_type: &str) {
+    if !content.is_empty() {
         let _ = std::fs::create_dir_all(format!("figma_output/components/{name}"));
 
         let _ = std::fs::write(
-            format!("figma_output/components/{name}/{name}.html"),
-            format!("{markup}"),
+            format!("figma_output/components/{name}/{name}.{file_type}"),
+            format!("{content}"),
         );
     }
 }
@@ -174,7 +170,7 @@ mod tests {
     use tempfile;
 
     #[test]
-    fn test_write_styles() {
+    fn test_write_files() {
         // Create a temporary directory
         let dir = tempfile::tempdir().unwrap();
 
@@ -186,7 +182,7 @@ mod tests {
         let styles = ".test { color: red; }".to_string();
 
         // Call the function
-        write_styles(name.clone(), styles.clone());
+        write_files(name.clone(), styles.clone(), "css");
 
         // Check if the styles were written to the correct file
         let path = format!("figma_output/components/{name}/{name}.css");
@@ -200,34 +196,5 @@ mod tests {
         // Convert the contents to a string and check if they match the styles
         let contents_str = String::from_utf8(contents).unwrap();
         assert_eq!(contents_str, styles);
-    }
-
-    #[test]
-    fn test_write_files() {
-        // Create a temporary directory
-        let dir = tempfile::tempdir().unwrap();
-
-        // Set the current working directory to the temporary directory
-        std::env::set_current_dir(dir.path()).unwrap();
-
-        // Define the name and styles
-        let name = "test".to_string();
-        let markup = "<div class=\"test\"></div>".to_string();
-
-        // Call the function
-        write_files(name.clone(), markup.clone());
-
-        // Check if the styles were written to the correct file
-        let path = format!("figma_output/components/{name}/{name}.html");
-        assert!(fs::metadata(&path).is_ok());
-
-        // Read the contents of the file
-        let mut file = std::fs::File::open(&path).unwrap();
-        let mut contents = Vec::new();
-        file.read_to_end(&mut contents).unwrap();
-
-        // Convert the contents to a string and check if they match the styles
-        let contents_str = String::from_utf8(contents).unwrap();
-        assert_eq!(contents_str, markup);
     }
 }

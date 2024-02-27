@@ -56,12 +56,10 @@ Create css variables based on figma tokens and design tokens (https://design-tok
 Figma variables can't be converted to css tokens without enterprise account to be able to use the REST API for Variables.
 
 ## TODO
-- create html files
 - update CLI to generate styles with REM units instead of PX
 - update CLI to pass a prefix for the components (ex: prefix=x for component button should create class: x-button), maybe this makes more sense for webcomponents
 - generate webcomponents from styles and markup, markup generation will be different
 - maybe update CLI to have a param to say that we want to generate webcomponents, or decide in a type of generation??
-- Add size styles for Text nodes
 - generate lists markup for Text nodes
 - GENERATE HTML
 - GENERATE WEB COMPONENTS
@@ -69,3 +67,7 @@ Figma variables can't be converted to css tokens without enterprise account to b
 - GENERATE DESIGN_TOKENS
 - GENERATE VARIABLES
 - GENERATE SVG COMPONENTS
+- GENERATE Colour gradient styles
+- ADD unit tests 
+- Test export with Uk gov figma designs https://www.figma.com/community/file/946837271092540314
+

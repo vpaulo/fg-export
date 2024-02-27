@@ -180,6 +180,54 @@ impl Frame {
         String::new()
     }
 
+    pub fn get_markup_attributes(&self, variant_parent_name: String) -> String {
+        let name = self.node.name.clone();
+        let mut current_attributes_classes = String::new();
+
+        if name.contains(",") {
+            let variants: Vec<&str> = name.split(", ").collect();
+            let mut classes = variant_parent_name;
+            let mut attributes = String::new();
+
+            for variant in variants {
+                let (variant_classes, variant_attributes) =
+                    &self.create_variant_attributes_classes(variant);
+                classes.push_str(&format!(" {variant_classes}"));
+                attributes.push_str(&variant_attributes);
+            }
+            current_attributes_classes = format!(" class=\"{}\"{attributes}", classes.trim());
+        } else if name.contains("=") {
+            let mut classes = variant_parent_name;
+            let (variant_classes, attributes) = &self.create_variant_attributes_classes(&name);
+            classes.push_str(&format!(" {variant_classes}"));
+            current_attributes_classes = format!(" class=\"{}\"{attributes}", classes.trim());
+        } else {
+            current_attributes_classes = format!(" class=\"{}\"", self.get_name());
+        }
+
+        current_attributes_classes
+    }
+
+    fn create_variant_attributes_classes(&self, variant: &str) -> (String, String) {
+        if let Some((first, last)) = variant.split_once("=") {
+            let attribute = first.to_case(Case::Kebab);
+            let value = last.to_case(Case::Kebab);
+
+            if let Some((val, second)) = value.split_once(";") {
+                let val = val.to_case(Case::Kebab);
+                if !PSEUDO_CLASSES.contains(&second) {
+                    let cl = format!("{}", second.to_case(Case::Kebab));
+                    return (cl, format!(" {attribute}=\"{val}\""));
+                }
+                return (String::new(), format!(" {attribute}=\"{val}\""));
+            }
+            if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
+                return (String::new(), format!(" {attribute}=\"{value}\""));
+            }
+        }
+        (String::new(), String::new())
+    }
+
     pub fn css(&self, parent: Frame) -> BTreeMap<String, String> {
         let mut rules: BTreeMap<String, String> = BTreeMap::new();
 
