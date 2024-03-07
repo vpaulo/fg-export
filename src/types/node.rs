@@ -117,9 +117,12 @@ impl Node {
         }
     }
 
-    pub fn is_instance(&self) -> Option<&Frame> {
+    pub fn is_instance(&self) -> Option<(&Frame, &String)> {
         match self {
-            Node::INSTANCE { frame, .. } => Some(frame),
+            Node::INSTANCE {
+                frame,
+                component_id,
+            } => Some((frame, component_id)),
             _ => None,
         }
     }

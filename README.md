@@ -61,7 +61,6 @@ Figma variables can't be converted to css tokens without enterprise account to b
 - generate webcomponents from styles and markup, markup generation will be different
 - maybe update CLI to have a param to say that we want to generate webcomponents, or decide in a type of generation??
 - generate lists markup for Text nodes
-- GENERATE HTML
 - GENERATE WEB COMPONENTS
 - GENERATE TOKENS
 - GENERATE DESIGN_TOKENS

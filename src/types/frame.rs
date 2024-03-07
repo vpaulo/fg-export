@@ -180,13 +180,13 @@ impl Frame {
         String::new()
     }
 
-    pub fn get_markup_attributes(&self, variant_parent_name: String) -> String {
-        let name = self.node.name.clone();
+    pub fn get_markup_attributes(&self, variant_classes: String, name: String) -> String {
+        // let name = self.node.name.clone();
         let mut current_attributes_classes = String::new();
 
         if name.contains(",") {
             let variants: Vec<&str> = name.split(", ").collect();
-            let mut classes = variant_parent_name;
+            let mut classes = variant_classes;
             let mut attributes = String::new();
 
             for variant in variants {
@@ -197,7 +197,7 @@ impl Frame {
             }
             current_attributes_classes = format!(" class=\"{}\"{attributes}", classes.trim());
         } else if name.contains("=") {
-            let mut classes = variant_parent_name;
+            let mut classes = variant_classes;
             let (variant_classes, attributes) = &self.create_variant_attributes_classes(&name);
             classes.push_str(&format!(" {variant_classes}"));
             current_attributes_classes = format!(" class=\"{}\"{attributes}", classes.trim());
@@ -214,15 +214,24 @@ impl Frame {
             let value = last.to_case(Case::Kebab);
 
             if let Some((val, second)) = value.split_once(";") {
-                let val = val.to_case(Case::Kebab);
+                let val = if val.eq("default") {
+                    String::new()
+                } else {
+                    val.to_case(Case::Kebab)
+                };
                 if !PSEUDO_CLASSES.contains(&second) {
                     let cl = format!("{}", second.to_case(Case::Kebab));
                     return (cl, format!(" {attribute}=\"{val}\""));
                 }
                 return (String::new(), format!(" {attribute}=\"{val}\""));
             }
-            if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
-                return (String::new(), format!(" {attribute}=\"{value}\""));
+            if !PSEUDO_CLASSES.contains(&value.as_str()) {
+                let val = if value.eq("default") {
+                    String::new()
+                } else {
+                    value
+                };
+                return (String::new(), format!(" {attribute}=\"{val}\""));
             }
         }
         (String::new(), String::new())
