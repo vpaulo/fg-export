@@ -1,13 +1,19 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
-use crate::types::{
-    component::{Component, ComponentSet},
-    file::FigmaData,
-    frame::Frame,
-    node::Node,
+use crate::{
+    types::{
+        component::{Component, ComponentSet},
+        file::FigmaData,
+        frame::Frame,
+        node::Node,
+        styles::Style,
+        token::Token,
+    },
+    utils::token_values,
 };
 
 use askama::Template;
+use convert_case::{Case, Casing};
 
 #[derive(Template)]
 #[template(path = "css.html")]
@@ -28,9 +34,11 @@ pub fn parse(file: FigmaData) {
     let components = file.components;
     let component_sets = file.component_sets;
     let pages = file.document.common().children.iter();
+    let styles = file.styles;
     let parent_frame = Frame {
         ..Default::default()
     };
+    let mut tokens: HashMap<String, Token> = HashMap::new();
 
     for page in pages {
         let nodes = page.common().children.iter();
@@ -38,19 +46,24 @@ pub fn parse(file: FigmaData) {
         for node in nodes {
             if let Some(_) = node.is_component_or_set() {
                 let mut element: Vec<MarkupTemplate> = Vec::new();
-                let mut styles: Vec<String> = Vec::new();
+                let mut css: Vec<String> = Vec::new();
+
+                generate_tokens(node, &styles, &mut tokens);
+
+                // println!(">>> TOKENS: {:?}", tokens);
+
                 generate(
                     node,
                     &parent_frame,
                     &String::new(),
                     &mut element,
-                    &mut styles,
+                    &mut css,
                     false,
                     &components,
                     &component_sets,
                 );
 
-                write_files(node.common().get_name(), styles.join("\n"), "css");
+                write_files(node.common().get_name(), css.join("\n"), "css");
                 create_markup(
                     node.common().get_name(),
                     element,
@@ -58,6 +71,7 @@ pub fn parse(file: FigmaData) {
                 );
             }
         }
+        write_tokens(&tokens);
     }
 }
 
@@ -66,7 +80,7 @@ fn generate(
     parent_frame: &Frame,
     parent_classes: &String,
     element: &mut Vec<MarkupTemplate>,
-    styles: &mut Vec<String>,
+    css: &mut Vec<String>,
     is_instance: bool,
     components: &HashMap<String, Component>,
     component_sets: &HashMap<String, ComponentSet>,
@@ -109,10 +123,10 @@ fn generate(
 
         if let None = node.is_component_set() {
             if !is_instance {
-                let css = frame.css(parent_frame.clone());
-                styles.push(get_styles(
+                let element_css = frame.css(parent_frame.clone());
+                css.push(get_styles(
                     &classes,
-                    &css.iter().collect::<Vec<(&String, &String)>>(),
+                    &element_css.iter().collect::<Vec<(&String, &String)>>(),
                 ));
             }
         }
@@ -123,7 +137,7 @@ fn generate(
                 let text_classes = format!("{classes} .{}", vector.get_name());
 
                 if !is_instance {
-                    styles.push(get_styles(
+                    css.push(get_styles(
                         &text_classes,
                         &text_css.iter().collect::<Vec<(&String, &String)>>(),
                     ));
@@ -143,7 +157,7 @@ fn generate(
                     frame,
                     &classes,
                     &mut element_markup.children,
-                    styles,
+                    css,
                     condition,
                     components,
                     component_sets,
@@ -151,6 +165,81 @@ fn generate(
             }
         }
         element.push(element_markup);
+    }
+}
+
+fn generate_tokens(
+    node: &Node,
+    styles: &HashMap<String, Style>,
+    tokens: &mut HashMap<String, Token>,
+) {
+    // TODO: look into removing duplication of logic
+    if let Some(frame) = node.is_frame() {
+        // "styles": {
+        //     "effect": "438:18",
+        //     "strokes": "456:20",
+        //     "grid": "438:19",
+        //     "fills": "438:17",
+        //     "text": "436:12",
+        // }
+        if let Some(style) = &frame.styles {
+            for (key, id) in style.iter() {
+                if tokens.get(id).is_none() {
+                    if let Some(s) = styles.get(id) {
+                        let value = match key.as_str() {
+                            "fills" => frame.background(),
+                            "strokes" => frame.border_colour(),
+                            "effect" => frame.box_shadow(),
+                            "grid" => String::new(), // TODO
+                            _ => String::new(),
+                        };
+
+                        if !value.is_empty() {
+                            let (variable, theme) = token_values(s.name.clone());
+                            let token = Token {
+                                name: s.name.clone(),
+                                variable,
+                                value,
+                                theme,
+                            };
+                            tokens.insert(id.clone(), token);
+                        }
+                    }
+                }
+            }
+        }
+
+        for child in frame.node.children.iter() {
+            if let Some((vector, _)) = child.is_text() {
+                if let Some(style) = &vector.styles {
+                    for (key, id) in style.iter() {
+                        if tokens.get(id).is_none() {
+                            if let Some(s) = styles.get(id) {
+                                let value = match key.as_str() {
+                                    "text" => String::new(), // TODO
+                                    "fills" => vector.text_colour(),
+                                    "strokes" => vector.border_colour(),
+                                    "effect" => vector.box_shadow(),
+                                    _ => String::new(),
+                                };
+
+                                if !value.is_empty() {
+                                    let (variable, theme) = token_values(s.name.clone());
+                                    let token = Token {
+                                        name: s.name.clone(),
+                                        variable,
+                                        value,
+                                        theme,
+                                    };
+                                    tokens.insert(id.clone(), token);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            generate_tokens(child, styles, tokens);
+        }
     }
 }
 
@@ -174,6 +263,12 @@ fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
     }
 
     write_files(name, content, "html");
+}
+
+fn write_tokens(tokens: &HashMap<String, Token>) {
+    // TODO: sort vec by token value
+    let values = tokens.values().collect::<Vec<&Token>>();//.sort_by(|a, b| a.value.cmp(&b.value));
+    println!(">>> TOKENS SORT: {:?} ", values);
 }
 
 fn write_files(name: String, content: String, file_type: &str) {

@@ -110,6 +110,7 @@ pub enum StyleType {
     Grid,
 }
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Style {
     pub key: String,
     pub name: String,

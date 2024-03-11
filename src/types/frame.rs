@@ -104,7 +104,7 @@ pub struct Frame {
     pub is_mask: Option<bool>,
     // #[serde(default)]
     // pub is_mask_outline: bool,
-    pub styles: Option<HashMap<StyleType, String>>,
+    pub styles: Option<HashMap<String, String>>,
 }
 
 impl Frame {
@@ -348,7 +348,7 @@ impl Frame {
         return String::new();
     }
 
-    fn background(&self) -> String {
+    pub fn background(&self) -> String {
         for paint in self.fills.iter() {
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: get colours, maybe move this logic to get_solid
@@ -390,7 +390,7 @@ impl Frame {
         return HashMap::new();
     }
 
-    fn box_shadow(&self) -> String {
+    pub fn box_shadow(&self) -> String {
         let effect_list: Vec<String> = self
             .effects
             .iter()
@@ -630,7 +630,7 @@ impl Frame {
         "solid".to_string()
     }
 
-    fn border_colour(&self) -> String {
+    pub fn border_colour(&self) -> String {
         for paint in self.strokes.iter() {
             if paint.visible && paint.data.get_solid().is_some() {
                 // TODO: Same as background

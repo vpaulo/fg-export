@@ -1,7 +1,7 @@
 use super::{
     blend_mode::BlendMode,
     easing_type::EasingType,
-    effect::Effect,
+    effect::{Effect, EffectType},
     export_settings::ExportSetting,
     layout::{LayoutConstraint, LayoutSizingMode},
     node_common::NodeCommon,
@@ -57,7 +57,7 @@ pub struct VectorCommon {
     pub stroke_dashes: Vec<f32>,
     pub stroke_miter_angle: Option<f32>,
     pub stroke_geometry: Option<Vec<Path>>,
-    pub styles: Option<HashMap<StyleType, String>>,
+    pub styles: Option<HashMap<String, String>>,
 }
 
 impl VectorCommon {
@@ -79,6 +79,49 @@ impl VectorCommon {
         }
 
         return String::new();
+    }
+
+    pub fn border_colour(&self) -> String {
+        for paint in self.strokes.iter() {
+            if paint.visible && paint.data.get_solid().is_some() {
+                // TODO: Same as background
+                return match paint.data.get_solid() {
+                    Some(c) => c.rgba(),
+                    None => String::new(),
+                };
+            }
+        }
+
+        String::new()
+    }
+
+    pub fn box_shadow(&self) -> String {
+        let effect_list: Vec<String> = self
+            .effects
+            .iter()
+            .filter(|x| x.visible)
+            .map(|e| match e.effect_type {
+                EffectType::InnerShadow => format!("inset {}", VectorCommon::shadow(e)),
+                EffectType::DropShadow => VectorCommon::shadow(e),
+                _ => String::new(),
+            })
+            .collect();
+
+        effect_list.join(", ")
+    }
+
+    fn shadow(effect: &Effect) -> String {
+        let Effect {
+            offset,
+            spread,
+            radius,
+            color,
+            ..
+        } = effect;
+        let x = offset.x();
+        let y = offset.y();
+        let rgba = color.rgba();
+        format!("{x:0}px {y:0}px {radius:0}px {spread:0}px {rgba}")
     }
 
     pub fn width(&self) -> String {

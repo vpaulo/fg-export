@@ -23,6 +23,7 @@ pub mod stroke_align;
 pub mod stroke_weights;
 pub mod styles;
 pub mod text;
+pub mod token;
 pub mod transform;
 pub mod vector;
 pub mod vector_common;
