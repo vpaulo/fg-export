@@ -127,7 +127,7 @@ impl Frame {
 
         // Variant attributes/pseudo-classes
         if name.contains(",") {
-            let variants: Vec<&str> = name.split(", ").collect();
+            let variants: Vec<&str> = name.split(",").map(|v| v.trim()).collect();
             let mut pseudo = String::new();
 
             for variant in variants {
@@ -185,7 +185,7 @@ impl Frame {
         let mut current_attributes_classes = String::new();
 
         if name.contains(",") {
-            let variants: Vec<&str> = name.split(", ").collect();
+            let variants: Vec<&str> = name.split(",").map(|v| v.trim()).collect();
             let mut classes = variant_classes;
             let mut attributes = String::new();
 
