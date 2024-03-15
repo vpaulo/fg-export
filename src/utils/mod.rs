@@ -34,7 +34,7 @@ pub fn default_list_spacing() -> f32 {
 
 pub fn token_values(name: String) -> (String, String) {
     let mut variable = format!("--{}", name.to_case(Case::Kebab));
-    let mut theme = String::new();
+    let mut theme = String::from(":root");
 
     if name.contains("/") {
         let list = name.split("/").collect::<Vec<&str>>();

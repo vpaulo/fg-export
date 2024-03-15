@@ -1,0 +1,11 @@
+{%- for (key, values) in rules %}
+{%- if key == ":root" %}
+{{- key }} {
+{%- else %}
+.{{ key }} {
+{%- endif -%}
+    {%- for rule in values %}
+    {{ rule }}
+    {%- endfor %}
+}
+{%- endfor %}

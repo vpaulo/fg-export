@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     types::{
@@ -13,7 +13,6 @@ use crate::{
 };
 
 use askama::Template;
-use convert_case::{Case, Casing};
 
 #[derive(Template)]
 #[template(path = "css.html")]
@@ -28,6 +27,12 @@ struct MarkupTemplate {
     tag: String,
     classes: String,
     children: Vec<MarkupTemplate>,
+}
+
+#[derive(Template, Debug)]
+#[template(path = "theme.html", escape = "none")]
+struct ThemeTemplate {
+    rules: BTreeMap<String, Vec<String>>,
 }
 
 pub fn parse(file: FigmaData) {
@@ -216,7 +221,7 @@ fn generate_tokens(
                         if tokens.get(id).is_none() {
                             if let Some(s) = styles.get(id) {
                                 let value = match key.as_str() {
-                                    "text" => String::new(), // TODO
+                                    "text" => String::new(), // TODO: this one needs to generate multiple css variables and maybe a class to add to component css
                                     "fills" => vector.text_colour(),
                                     "strokes" => vector.border_colour(),
                                     "effect" => vector.box_shadow(),
@@ -266,9 +271,28 @@ fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
 }
 
 fn write_tokens(tokens: &HashMap<String, Token>) {
-    // TODO: sort vec by token value
-    let values = tokens.values().collect::<Vec<&Token>>();//.sort_by(|a, b| a.value.cmp(&b.value));
-    println!(">>> TOKENS SORT: {:?} ", values);
+    let mut tk: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    for (_, token) in tokens.iter() {
+        if let None = tk.get(&token.theme) {
+            let rules: Vec<String> = tokens
+                .into_iter()
+                .filter(|(_, t)| t.theme.eq(&token.theme))
+                .map(|(_id, tok)| format!("{}: {};", tok.variable, tok.value))
+                .collect();
+            tk.insert(token.theme.clone(), rules);
+        }
+    }
+
+    let tmp = ThemeTemplate { rules: tk.clone() };
+
+    let content = tmp.render().unwrap();
+
+    if !content.is_empty() {
+        let _ = std::fs::create_dir_all(format!("figma_output/css"));
+
+        let _ = std::fs::write(format!("figma_output/css/theme.css"), format!("{content}"));
+    }
 }
 
 fn write_files(name: String, content: String, file_type: &str) {
