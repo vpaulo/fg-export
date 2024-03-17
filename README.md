@@ -70,4 +70,5 @@ Figma variables can't be converted to css tokens without enterprise account to b
 - GENERATE Colour gradient styles
 - ADD unit tests 
 - Test export with Uk gov figma designs https://www.figma.com/community/file/946837271092540314
+- Publish CLI to Cargo
 

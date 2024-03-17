@@ -4,5 +4,4 @@ pub struct Token {
     pub variable: String,
     pub value: String,
     pub theme: String,
-    // pub brand: String,
 }

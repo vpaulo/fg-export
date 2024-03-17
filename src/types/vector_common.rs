@@ -9,7 +9,7 @@ use super::{
     path::Path,
     rectangle::Rectangle,
     stroke_align::StrokeAlign,
-    styles::{StyleType, TypeStyle},
+    styles::TypeStyle,
     text::TextTruncation,
     transform::Transform,
     vector::Vector,

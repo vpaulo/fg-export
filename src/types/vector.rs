@@ -6,12 +6,10 @@ pub struct Vector {
     pub y: Option<f32>,
 }
 impl Vector {
-    pub fn is_valid(&self) -> bool {
-        self.x.is_some() && self.y.is_some()
-    }
     pub fn x(&self) -> f32 {
         self.x.unwrap_or(0.0)
     }
+
     pub fn y(&self) -> f32 {
         self.y.unwrap_or(0.0)
     }

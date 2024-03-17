@@ -19,7 +19,6 @@ use super::{
     rectangle::Rectangle,
     stroke_align::StrokeAlign,
     stroke_weights::StrokeWeights,
-    styles::StyleType,
     transform::Transform,
     vector::Vector,
 };
@@ -181,7 +180,6 @@ impl Frame {
     }
 
     pub fn get_markup_attributes(&self, variant_classes: String, name: String) -> String {
-        // let name = self.node.name.clone();
         let mut current_attributes_classes = String::new();
 
         if name.contains(",") {

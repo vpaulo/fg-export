@@ -95,13 +95,6 @@ impl Node {
         }
     }
 
-    pub fn is_component(&self) -> Option<&Frame> {
-        match self {
-            Node::COMPONENT(frame) => Some(frame),
-            _ => None,
-        }
-    }
-
     pub fn is_component_set(&self) -> Option<&Frame> {
         match self {
             Node::COMPONENT_SET(frame) => Some(frame),
