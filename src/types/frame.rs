@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 use crate::utils::default_effects;
 
 use super::layout::AxisSizingMode;
+use super::token::Token;
 use super::{
     blend_mode::BlendMode,
     effect::{Effect, EffectType},
@@ -235,7 +236,7 @@ impl Frame {
         (String::new(), String::new())
     }
 
-    pub fn css(&self, parent: Frame) -> BTreeMap<String, String> {
+    pub fn css(&self, parent: Frame, tokens: &HashMap<String, Token>) -> BTreeMap<String, String> {
         let mut rules: BTreeMap<String, String> = BTreeMap::new();
 
         if !self.node.visible {
@@ -296,11 +297,35 @@ impl Frame {
         }
 
         if !self.background().is_empty() {
-            rules.insert("background".to_string(), self.background());
+            let mut background = self.background();
+            if let Some(s) = &self.styles {
+                // Hope this unwraps don't cause an issue :)
+                background = format!(
+                    "var({})",
+                    tokens
+                        .get(&s.get("fills").unwrap_or(&background).to_string())
+                        .unwrap()
+                        .variable
+                );
+            }
+            rules.insert("background".to_string(), background);
         }
 
-        if !self.box_shadow().is_empty() {
-            rules.insert("box-shadow".to_string(), self.box_shadow());
+        if !self.box_shadow(None).is_empty() {
+            let mut box_shadow_colour = String::new();
+            if let Some(s) = &self.styles {
+                box_shadow_colour = format!(
+                    "var({})",
+                    tokens
+                        .get(&s.get("strokes").unwrap_or(&box_shadow_colour).to_string())
+                        .unwrap()
+                        .variable
+                );
+            }
+            rules.insert(
+                "box-shadow".to_string(),
+                self.box_shadow(Some(box_shadow_colour)),
+            );
         }
 
         if !self.blur().is_empty() {
@@ -388,14 +413,14 @@ impl Frame {
         return HashMap::new();
     }
 
-    pub fn box_shadow(&self) -> String {
+    pub fn box_shadow(&self, box_shadow_colour: Option<String>) -> String {
         let effect_list: Vec<String> = self
             .effects
             .iter()
             .filter(|x| x.visible)
             .map(|e| match e.effect_type {
-                EffectType::InnerShadow => format!("inset {}", Frame::shadow(e)),
-                EffectType::DropShadow => Frame::shadow(e),
+                EffectType::InnerShadow => format!("inset {}", Frame::shadow(e, box_shadow_colour.clone())),
+                EffectType::DropShadow => Frame::shadow(e, box_shadow_colour.clone()),
                 _ => String::new(),
             })
             .collect();
@@ -700,7 +725,7 @@ impl Frame {
         }
     }
 
-    fn shadow(effect: &Effect) -> String {
+    fn shadow(effect: &Effect, box_shadow_colour: Option<String>) -> String {
         let Effect {
             offset,
             spread,
@@ -710,7 +735,11 @@ impl Frame {
         } = effect;
         let x = offset.x();
         let y = offset.y();
-        let rgba = color.rgba();
+        let rgba = if let Some(c) = box_shadow_colour {
+            c
+        } else {
+            color.rgba()
+        };
         format!("{x:0}px {y:0}px {radius:0}px {spread:0}px {rgba}")
     }
 }

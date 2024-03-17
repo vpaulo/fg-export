@@ -66,6 +66,7 @@ pub fn parse(file: FigmaData) {
                     false,
                     &components,
                     &component_sets,
+                    &tokens,
                 );
 
                 write_files(node.common().get_name(), css.join("\n"), "css");
@@ -89,6 +90,7 @@ fn generate(
     is_instance: bool,
     components: &HashMap<String, Component>,
     component_sets: &HashMap<String, ComponentSet>,
+    tokens: &HashMap<String, Token>,
 ) {
     if let Some(frame) = node.is_frame() {
         let classes = format!(
@@ -128,7 +130,7 @@ fn generate(
 
         if let None = node.is_component_set() {
             if !is_instance {
-                let element_css = frame.css(parent_frame.clone());
+                let element_css = frame.css(parent_frame.clone(), tokens);
                 css.push(get_styles(
                     &classes,
                     &element_css.iter().collect::<Vec<(&String, &String)>>(),
@@ -166,6 +168,7 @@ fn generate(
                     condition,
                     components,
                     component_sets,
+                    tokens,
                 );
             }
         }
@@ -194,7 +197,7 @@ fn generate_tokens(
                         let value = match key.as_str() {
                             "fills" => frame.background(),
                             "strokes" => frame.border_colour(),
-                            "effect" => frame.box_shadow(),
+                            "effect" => frame.box_shadow(None),
                             "grid" => String::new(), // TODO
                             _ => String::new(),
                         };
@@ -214,6 +217,7 @@ fn generate_tokens(
             }
         }
 
+        // TODO: improve this multiple condition chaining
         for child in frame.node.children.iter() {
             if let Some((vector, _)) = child.is_text() {
                 if let Some(style) = &vector.styles {
