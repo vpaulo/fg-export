@@ -317,7 +317,7 @@ impl Frame {
                 box_shadow_colour = format!(
                     "var({})",
                     tokens
-                        .get(&s.get("strokes").unwrap_or(&box_shadow_colour).to_string())
+                        .get(&s.get("effect").unwrap_or(&box_shadow_colour).to_string())
                         .unwrap()
                         .variable
                 );
