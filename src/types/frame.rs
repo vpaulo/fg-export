@@ -25,7 +25,7 @@ use super::{
 };
 
 // Only user action pseudo-classes
-const PSEUDO_CLASSES: [&str; 5] = ["hover", "active", "focus", "focus-visible", "focus-within"];
+const PSEUDO_CLASSES: [&str; 6] = ["hover", "active", "focus", "disabled", "focus-visible", "focus-within"];
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -151,15 +151,21 @@ impl Frame {
             let attribute = first.to_case(Case::Kebab);
             let value = last.to_case(Case::Kebab);
 
+            if PSEUDO_CLASSES.contains(&first) {
+                return String::new();
+            } 
+            
             if let Some((val, second)) = value.split_once(";") {
                 let val = val.to_case(Case::Kebab);
-                let cl: String = if !PSEUDO_CLASSES.contains(&second) {
+                let cl: String = if !second.eq("default") && !PSEUDO_CLASSES.contains(&second) {
                     format!(".{}", second.to_case(Case::Kebab))
                 } else {
                     String::new()
                 };
                 return format!("[{attribute}=\"{val}\"]{cl}");
-            } else if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
+            } 
+            
+            if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
                 return format!("[{attribute}=\"{value}\"]");
             }
         }
@@ -167,14 +173,24 @@ impl Frame {
     }
 
     fn create_pseudo_classes(&self, variant: &str) -> String {
-        if let Some((_, last)) = variant.split_once("=") {
+        if let Some((first, last)) = variant.split_once("=") {
+            let attribute = first.to_case(Case::Kebab);
             let value = last.to_case(Case::Kebab);
 
             if let Some((_, pseudo)) = value.split_once(";") {
                 let pseudo = pseudo.to_case(Case::Kebab);
-                return format!(":{pseudo}");
-            } else if !value.eq("default") && PSEUDO_CLASSES.contains(&value.as_str()) {
+                if !pseudo.eq("default") && PSEUDO_CLASSES.contains(&pseudo.as_str()) {
+                    return format!(":{pseudo}");
+                }
+                return String::new();
+            } 
+            
+            if !value.eq("default") && PSEUDO_CLASSES.contains(&value.as_str()) {
                 return format!(":{value}");
+            } 
+            
+            if PSEUDO_CLASSES.contains(&first) && value.eq("true") {
+                return format!(":{attribute}");
             }
         }
         String::new()
@@ -419,7 +435,9 @@ impl Frame {
             .iter()
             .filter(|x| x.visible)
             .map(|e| match e.effect_type {
-                EffectType::InnerShadow => format!("inset {}", Frame::shadow(e, box_shadow_colour.clone())),
+                EffectType::InnerShadow => {
+                    format!("inset {}", Frame::shadow(e, box_shadow_colour.clone()))
+                }
                 EffectType::DropShadow => Frame::shadow(e, box_shadow_colour.clone()),
                 _ => String::new(),
             })
@@ -808,5 +826,41 @@ mod frame_tests {
             .rotation(),
             ""
         );
+    }
+
+    fn get_classes_helper(class: &str) -> String {
+        Frame {
+            node: NodeCommon {
+                name: String::from(class),
+                ..NodeCommon::default()
+            },
+            ..Frame::default()
+        }
+        .get_classes()
+    }
+    
+    #[test]
+    fn classes_attributes() {
+        assert_eq!(get_classes_helper("my-component"), " .my-component");
+        assert_eq!(get_classes_helper("my component"), " .my-component");
+        assert_eq!(get_classes_helper("myComponent"), " .my-component");
+
+        assert_eq!(get_classes_helper("type=default"), "");
+        assert_eq!(get_classes_helper("type=test"), "[type=\"test\"]");
+        assert_eq!(get_classes_helper("type=hover"), ":hover");
+
+        assert_eq!(get_classes_helper("type=test,state=ok"), "[type=\"test\"][state=\"ok\"]");
+        assert_eq!(get_classes_helper("type=test,state=hover"), "[type=\"test\"]:hover");
+        assert_eq!(get_classes_helper("state=hover, type=test"), "[type=\"test\"]:hover");
+        assert_eq!(get_classes_helper("type=test,state=default"), "[type=\"test\"]");
+
+        assert_eq!(get_classes_helper("type=test;default"), "[type=\"test\"]");
+        assert_eq!(get_classes_helper("type=test;hover"), "[type=\"test\"]:hover");
+        assert_eq!(get_classes_helper("type=test;ok"), "[type=\"test\"].ok");
+
+        assert_eq!(get_classes_helper("type=test,hover=true"), "[type=\"test\"]:hover");
+        assert_eq!(get_classes_helper("type=test,hover=false"), "[type=\"test\"]");
+        assert_eq!(get_classes_helper("hover=true"), ":hover");
+        assert_eq!(get_classes_helper("hover=false"), "");
     }
 }
