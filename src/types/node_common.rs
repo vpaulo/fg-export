@@ -1,8 +1,7 @@
-use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 
 use super::node::Node;
-use crate::utils;
+use crate::utils::{self, parse_name};
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct NodeCommon {
@@ -16,6 +15,6 @@ pub struct NodeCommon {
 
 impl NodeCommon {
     pub fn get_name(&self) -> String {
-        self.name.to_case(Case::Kebab)
+        parse_name(&self.name.to_string())
     }
 }

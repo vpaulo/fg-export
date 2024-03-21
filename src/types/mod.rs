@@ -18,6 +18,7 @@ pub mod overflow_direction;
 pub mod paint;
 pub mod path;
 pub mod rectangle;
+pub mod section;
 pub mod size;
 pub mod stroke_align;
 pub mod stroke_weights;

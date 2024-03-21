@@ -32,17 +32,25 @@ pub fn default_list_spacing() -> f32 {
     0.0
 }
 
+pub fn parse_name(name: &String) -> String {
+    name.replace("/", " ")
+        .replace("•", " ")
+        .replace(".", " ")
+        .replace("\u{a0}", " ")
+        .to_case(Case::Kebab)
+}
+
 pub fn token_values(name: String) -> (String, String) {
-    let mut variable = format!("--{}", name.to_case(Case::Kebab));
+    let mut variable = format!("--{}", parse_name(&name));
     let mut theme = String::from(":root");
 
     if name.contains("/") {
         let list = name.split("/").collect::<Vec<&str>>();
         if list[0].contains("theme") {
-            theme = list[0].to_case(Case::Kebab);
-            variable = format!("--{}", list[1..].join("-").to_case(Case::Kebab));
+            theme = parse_name(&list[0].to_string());
+            variable = format!("--{}", parse_name(&list[1..].join("-")));
         } else {
-            variable = format!("--{}", list.join("-").to_case(Case::Kebab));
+            variable = format!("--{}", parse_name(&list.join("-")));
         }
     }
 

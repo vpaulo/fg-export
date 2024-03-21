@@ -1,6 +1,7 @@
 use super::{
     export_settings::ExportSetting, frame::Frame, node_common::NodeCommon, rectangle::Rectangle,
-    styles::TypeStyle, transform::Transform, vector::Vector, vector_common::VectorCommon,
+    section::Section, styles::TypeStyle, transform::Transform, vector::Vector,
+    vector_common::VectorCommon,
 };
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +16,7 @@ pub enum Node {
     },
     FRAME(Frame),
     GROUP(Frame),
+    SECTION(Section),
     VECTOR(VectorCommon),
     #[serde(rename_all = "camelCase")]
     BOOLEAN_OPERATION {
@@ -68,6 +70,7 @@ impl Node {
             Node::CANVAS { node, .. } => node,
             Node::FRAME(Frame { node, .. }) => node,
             Node::GROUP(Frame { node, .. }) => node,
+            Node::SECTION(Section { node, .. }) => node,
             Node::VECTOR(VectorCommon { node, .. }) => node,
             Node::BOOLEAN_OPERATION {
                 vector: VectorCommon { node, .. },
@@ -115,6 +118,7 @@ impl Node {
             Node::INSTANCE {
                 frame,
                 component_id,
+                ..
             } => Some((frame, component_id)),
             _ => None,
         }

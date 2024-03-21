@@ -1,8 +1,7 @@
-use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
-use crate::utils::default_effects;
+use crate::utils::{default_effects, parse_name};
 
 use super::layout::AxisSizingMode;
 use super::token::Token;
@@ -25,7 +24,14 @@ use super::{
 };
 
 // Only user action pseudo-classes
-const PSEUDO_CLASSES: [&str; 6] = ["hover", "active", "focus", "disabled", "focus-visible", "focus-within"];
+const PSEUDO_CLASSES: [&str; 6] = [
+    "hover",
+    "active",
+    "focus",
+    "disabled",
+    "focus-visible",
+    "focus-within",
+];
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -109,7 +115,7 @@ pub struct Frame {
 
 impl Frame {
     pub fn get_name(&self) -> String {
-        self.node.name.to_case(Case::Kebab)
+        parse_name(&self.node.name)
     }
 
     pub fn is_variant(&self) -> bool {
@@ -148,23 +154,23 @@ impl Frame {
 
     fn create_variant_classes(&self, variant: &str) -> String {
         if let Some((first, last)) = variant.split_once("=") {
-            let attribute = first.to_case(Case::Kebab);
-            let value = last.to_case(Case::Kebab);
+            let attribute = parse_name(&first.to_string());
+            let value = parse_name(&last.to_string());
 
             if PSEUDO_CLASSES.contains(&first) {
                 return String::new();
-            } 
-            
+            }
+
             if let Some((val, second)) = value.split_once(";") {
-                let val = val.to_case(Case::Kebab);
+                let val = parse_name(&val.to_string());
                 let cl: String = if !second.eq("default") && !PSEUDO_CLASSES.contains(&second) {
-                    format!(".{}", second.to_case(Case::Kebab))
+                    format!(".{}", parse_name(&second.to_string()))
                 } else {
                     String::new()
                 };
                 return format!("[{attribute}=\"{val}\"]{cl}");
-            } 
-            
+            }
+
             if !value.eq("default") && !PSEUDO_CLASSES.contains(&value.as_str()) {
                 return format!("[{attribute}=\"{value}\"]");
             }
@@ -174,21 +180,21 @@ impl Frame {
 
     fn create_pseudo_classes(&self, variant: &str) -> String {
         if let Some((first, last)) = variant.split_once("=") {
-            let attribute = first.to_case(Case::Kebab);
-            let value = last.to_case(Case::Kebab);
+            let attribute = parse_name(&first.to_string());
+            let value = parse_name(&last.to_string());
 
             if let Some((_, pseudo)) = value.split_once(";") {
-                let pseudo = pseudo.to_case(Case::Kebab);
+                let pseudo = parse_name(&pseudo.to_string());
                 if !pseudo.eq("default") && PSEUDO_CLASSES.contains(&pseudo.as_str()) {
                     return format!(":{pseudo}");
                 }
                 return String::new();
-            } 
-            
+            }
+
             if !value.eq("default") && PSEUDO_CLASSES.contains(&value.as_str()) {
                 return format!(":{value}");
-            } 
-            
+            }
+
             if PSEUDO_CLASSES.contains(&first) && value.eq("true") {
                 return format!(":{attribute}");
             }
@@ -225,17 +231,17 @@ impl Frame {
 
     fn create_variant_attributes_classes(&self, variant: &str) -> (String, String) {
         if let Some((first, last)) = variant.split_once("=") {
-            let attribute = first.to_case(Case::Kebab);
-            let value = last.to_case(Case::Kebab);
+            let attribute = parse_name(&first.to_string());
+            let value = parse_name(&last.to_string());
 
             if let Some((val, second)) = value.split_once(";") {
                 let val = if val.eq("default") {
                     String::new()
                 } else {
-                    val.to_case(Case::Kebab)
+                    parse_name(&val.to_string())
                 };
                 if !PSEUDO_CLASSES.contains(&second) {
-                    let cl = format!("{}", second.to_case(Case::Kebab));
+                    let cl = format!("{}", parse_name(&second.to_string()));
                     return (cl, format!(" {attribute}=\"{val}\""));
                 }
                 return (String::new(), format!(" {attribute}=\"{val}\""));
@@ -315,14 +321,10 @@ impl Frame {
         if !self.background().is_empty() {
             let mut background = self.background();
             if let Some(s) = &self.styles {
-                // Hope this unwraps don't cause an issue :)
-                background = format!(
-                    "var({})",
-                    tokens
-                        .get(&s.get("fills").unwrap_or(&background).to_string())
-                        .unwrap()
-                        .variable
-                );
+                if let Some(token) = tokens.get(&s.get("fills").unwrap_or(&background).to_string())
+                {
+                    background = format!("var({})", token.variable);
+                }
             }
             rules.insert("background".to_string(), background);
         }
@@ -330,13 +332,11 @@ impl Frame {
         if !self.box_shadow(None).is_empty() {
             let mut box_shadow_colour = String::new();
             if let Some(s) = &self.styles {
-                box_shadow_colour = format!(
-                    "var({})",
-                    tokens
-                        .get(&s.get("effect").unwrap_or(&box_shadow_colour).to_string())
-                        .unwrap()
-                        .variable
-                );
+                if let Some(token) =
+                    tokens.get(&s.get("effect").unwrap_or(&box_shadow_colour).to_string())
+                {
+                    box_shadow_colour = format!("var({})", token.variable);
+                }
             }
             rules.insert(
                 "box-shadow".to_string(),
@@ -838,7 +838,7 @@ mod frame_tests {
         }
         .get_classes()
     }
-    
+
     #[test]
     fn classes_attributes() {
         assert_eq!(get_classes_helper("my-component"), " .my-component");
@@ -849,17 +849,38 @@ mod frame_tests {
         assert_eq!(get_classes_helper("type=test"), "[type=\"test\"]");
         assert_eq!(get_classes_helper("type=hover"), ":hover");
 
-        assert_eq!(get_classes_helper("type=test,state=ok"), "[type=\"test\"][state=\"ok\"]");
-        assert_eq!(get_classes_helper("type=test,state=hover"), "[type=\"test\"]:hover");
-        assert_eq!(get_classes_helper("state=hover, type=test"), "[type=\"test\"]:hover");
-        assert_eq!(get_classes_helper("type=test,state=default"), "[type=\"test\"]");
+        assert_eq!(
+            get_classes_helper("type=test,state=ok"),
+            "[type=\"test\"][state=\"ok\"]"
+        );
+        assert_eq!(
+            get_classes_helper("type=test,state=hover"),
+            "[type=\"test\"]:hover"
+        );
+        assert_eq!(
+            get_classes_helper("state=hover, type=test"),
+            "[type=\"test\"]:hover"
+        );
+        assert_eq!(
+            get_classes_helper("type=test,state=default"),
+            "[type=\"test\"]"
+        );
 
         assert_eq!(get_classes_helper("type=test;default"), "[type=\"test\"]");
-        assert_eq!(get_classes_helper("type=test;hover"), "[type=\"test\"]:hover");
+        assert_eq!(
+            get_classes_helper("type=test;hover"),
+            "[type=\"test\"]:hover"
+        );
         assert_eq!(get_classes_helper("type=test;ok"), "[type=\"test\"].ok");
 
-        assert_eq!(get_classes_helper("type=test,hover=true"), "[type=\"test\"]:hover");
-        assert_eq!(get_classes_helper("type=test,hover=false"), "[type=\"test\"]");
+        assert_eq!(
+            get_classes_helper("type=test,hover=true"),
+            "[type=\"test\"]:hover"
+        );
+        assert_eq!(
+            get_classes_helper("type=test,hover=false"),
+            "[type=\"test\"]"
+        );
         assert_eq!(get_classes_helper("hover=true"), ":hover");
         assert_eq!(get_classes_helper("hover=false"), "");
     }

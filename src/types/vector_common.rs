@@ -14,8 +14,7 @@ use super::{
     transform::Transform,
     vector::Vector,
 };
-use crate::utils::default_opacity;
-use convert_case::{Case, Casing};
+use crate::utils::{default_opacity, parse_name};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -62,7 +61,7 @@ pub struct VectorCommon {
 
 impl VectorCommon {
     pub fn get_name(&self) -> String {
-        self.node.name.to_case(Case::Kebab)
+        parse_name(&self.node.name.to_string())
     }
 
     pub fn text_colour(&self) -> String {
