@@ -240,11 +240,18 @@ impl Frame {
                 } else {
                     parse_name(&val.to_string())
                 };
+
+                let attr = if PSEUDO_CLASSES.contains(&attribute.as_str()) {
+                    String::new()
+                } else {
+                    format!(" {attribute}=\"{val}\"")
+                };
+
                 if !PSEUDO_CLASSES.contains(&second) {
                     let cl = format!("{}", parse_name(&second.to_string()));
-                    return (cl, format!(" {attribute}=\"{val}\""));
+                    return (cl, attr);
                 }
-                return (String::new(), format!(" {attribute}=\"{val}\""));
+                return (String::new(), attr);
             }
             if !PSEUDO_CLASSES.contains(&value.as_str()) {
                 let val = if value.eq("default") {
@@ -252,7 +259,14 @@ impl Frame {
                 } else {
                     value
                 };
-                return (String::new(), format!(" {attribute}=\"{val}\""));
+
+                let attr = if PSEUDO_CLASSES.contains(&attribute.as_str()) {
+                    String::new()
+                } else {
+                    format!(" {attribute}=\"{val}\"")
+                };
+
+                return (String::new(), attr);
             }
         }
         (String::new(), String::new())

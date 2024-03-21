@@ -109,13 +109,13 @@ fn generate(
         // and component_sets
         if let Some((_, component_id)) = node.is_instance() {
             if let Some(cmp) = components.get(component_id) {
-                variant_name = cmp.name.clone();
+                variant_name = cmp.get_name();
 
                 if let Some(set) = component_sets.get(&cmp.component_set_id) {
                     variant_classes = if set.name.eq(&frame.node.name) {
-                        frame.node.name.clone()
+                        frame.node.get_name()
                     } else {
-                        format!("{} {}", set.name.clone(), frame.node.name.clone())
+                        format!("{} {}", set.get_name(), frame.node.get_name())
                     }
                 }
             }
