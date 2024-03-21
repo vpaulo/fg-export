@@ -26,6 +26,7 @@ struct CssTemplate<'a> {
 struct MarkupTemplate {
     tag: String,
     classes: String,
+    characters: String,
     children: Vec<MarkupTemplate>,
 }
 
@@ -125,6 +126,7 @@ fn generate(
         let mut element_markup = MarkupTemplate {
             tag: "div".to_string(),
             classes: frame.get_markup_attributes(variant_classes, variant_name),
+            characters: String::new(),
             children: Vec::new(),
         };
 
@@ -139,7 +141,7 @@ fn generate(
         }
 
         for child in frame.node.children.iter() {
-            if let Some((vector, style)) = child.is_text() {
+            if let Some((vector, style, characters)) = child.is_text() {
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
 
@@ -152,6 +154,7 @@ fn generate(
                 element_markup.children.push(MarkupTemplate {
                     tag: "span".to_string(),
                     classes: format!(" class=\"{}\"", vector.get_name()),
+                    characters: characters.into(),
                     children: Vec::new(),
                 });
             } else {
@@ -219,7 +222,7 @@ fn generate_tokens(
 
         // TODO: improve this multiple condition chaining
         for child in frame.node.children.iter() {
-            if let Some((vector, _)) = child.is_text() {
+            if let Some((vector, _, _)) = child.is_text() {
                 if let Some(style) = &vector.styles {
                     for (key, id) in style.iter() {
                         if tokens.get(id).is_none() {

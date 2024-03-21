@@ -135,9 +135,9 @@ impl Node {
         }
     }
 
-    pub fn is_text(&self) -> Option<(&VectorCommon, &TypeStyle)> {
+    pub fn is_text(&self) -> Option<(&VectorCommon, &TypeStyle, &String)> {
         match self {
-            Node::TEXT { vector, style, .. } => Some((vector, style)),
+            Node::TEXT { vector, style, characters, .. } => Some((vector, style, characters)),
             _ => None,
         }
     }

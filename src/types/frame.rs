@@ -157,7 +157,10 @@ impl Frame {
             let attribute = parse_name(&first.to_string());
             let value = parse_name(&last.to_string());
 
-            if PSEUDO_CLASSES.contains(&first) {
+            if PSEUDO_CLASSES.contains(&attribute.as_str()){
+                if value.eq("true") {
+                    return format!(":{attribute}");
+                }
                 return String::new();
             }
 
@@ -344,17 +347,17 @@ impl Frame {
         }
 
         if !self.box_shadow(None).is_empty() {
-            let mut box_shadow_colour = String::new();
+            let mut box_shadow_colour = None;
             if let Some(s) = &self.styles {
                 if let Some(token) =
-                    tokens.get(&s.get("effect").unwrap_or(&box_shadow_colour).to_string())
+                    tokens.get(&s.get("effect").unwrap_or(&String::new()).to_string())
                 {
-                    box_shadow_colour = format!("var({})", token.variable);
+                    box_shadow_colour = Some(format!("var({})", token.variable));
                 }
             }
             rules.insert(
                 "box-shadow".to_string(),
-                self.box_shadow(Some(box_shadow_colour)),
+                self.box_shadow(box_shadow_colour),
             );
         }
 

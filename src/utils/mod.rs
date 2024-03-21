@@ -37,6 +37,7 @@ pub fn parse_name(name: &String) -> String {
         .replace("•", " ")
         .replace(".", " ")
         .replace(":", " ")
+        .replace("'", " ")
         .replace("\u{a0}", " ")
         .to_case(Case::Kebab)
 }

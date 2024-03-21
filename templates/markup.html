@@ -1,4 +1,5 @@
 <{{ tag }}{{ classes|safe }}>
+    {{- characters -}}
     {%- for c in children %}
     {{ c.render().unwrap()|indent(4) -}}
     {% endfor %}
