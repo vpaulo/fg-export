@@ -301,9 +301,6 @@ fn write_tokens(tokens: &HashMap<String, Token>) {
 
 fn write_files(name: String, content: String, file_type: &str) {
     if !content.is_empty() {
-        // if name.eq("building-blocks/content/body") {
-        println!(">>>> {:?}", name);
-        // }
         let _ = std::fs::create_dir_all(format!("figma_output/components/{name}"));
 
         let _ = std::fs::write(
