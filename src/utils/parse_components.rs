@@ -282,11 +282,12 @@ fn write_tokens(tokens: &HashMap<String, Token>) {
 
     for (_, token) in tokens.iter() {
         if let None = tk.get(&token.theme) {
-            let rules: Vec<String> = tokens
+            let mut rules: Vec<String> = tokens
                 .into_iter()
                 .filter(|(_, t)| t.theme.eq(&token.theme))
                 .map(|(_id, tok)| format!("{}: {};", tok.variable, tok.value))
                 .collect();
+            rules.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
             tk.insert(token.theme.clone(), rules);
         }
     }
