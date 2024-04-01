@@ -158,9 +158,6 @@ impl Frame {
             let value = parse_name(&last.to_string());
 
             if PSEUDO_CLASSES.contains(&attribute.as_str()){
-                if value.eq("true") {
-                    return format!(":{attribute}");
-                }
                 return String::new();
             }
 
