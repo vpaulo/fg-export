@@ -73,4 +73,6 @@ Figma variables can't be converted to css tokens without enterprise account to b
 - Publish CLI to Cargo
 - Remove css duplicates
 - Add missing children of a component as display none
+- Add gradients
+- Add Text list ???
 

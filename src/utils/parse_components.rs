@@ -13,6 +13,10 @@ use crate::{
 };
 
 use askama::Template;
+use lightningcss::{
+    printer::PrinterOptions,
+    stylesheet::{MinifyOptions, ParserOptions, StyleSheet},
+};
 
 #[derive(Template)]
 #[template(path = "css.html")]
@@ -70,7 +74,7 @@ pub fn parse(file: FigmaData) {
                     &tokens,
                 );
 
-                write_files(node.common().get_name(), css.join("\n"), "css");
+                create_css(node.common().get_name(), css.join("\n"), "css");
                 create_markup(
                     node.common().get_name(),
                     element,
@@ -275,6 +279,22 @@ fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
     }
 
     write_files(name, content, "html");
+}
+
+fn create_css(name: String, content: String, file_type: &str) {
+    // TODO: check options to improve result
+    // Parse a style sheet from a string.
+    let mut stylesheet = StyleSheet::parse(content.as_str(), ParserOptions::default()).unwrap();
+
+    // Minify the stylesheet.
+    stylesheet.minify(MinifyOptions::default()).unwrap();
+
+    // Serialize it to a string.
+    let res = stylesheet.to_css(PrinterOptions::default()).unwrap();
+
+    // println!(">>>>> {:?}/n", res.code);
+
+    write_files(name, res.code, file_type);
 }
 
 fn write_tokens(tokens: &HashMap<String, Token>) {
