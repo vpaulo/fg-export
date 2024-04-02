@@ -283,6 +283,7 @@ fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
 
 fn create_css(name: String, content: String, file_type: &str) {
     // TODO: check options to improve result
+    // TODO: NOT WORKING AS EXPECTED????
     // Parse a style sheet from a string.
     let mut stylesheet = StyleSheet::parse(content.as_str(), ParserOptions::default()).unwrap();
 

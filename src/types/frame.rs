@@ -195,7 +195,7 @@ impl Frame {
                 return format!(":{value}");
             }
 
-            if PSEUDO_CLASSES.contains(&first) && value.eq("true") {
+            if PSEUDO_CLASSES.contains(&attribute.as_str()) && value.eq("true") {
                 return format!(":{attribute}");
             }
         }
