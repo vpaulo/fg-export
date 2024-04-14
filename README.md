@@ -63,7 +63,7 @@ Figma variables can't be converted to css tokens without enterprise account to b
 - generate lists markup for Text nodes
 - GENERATE WEB COMPONENTS
 - GENERATE TOKENS
-    - Missing text and gris tokens and add them to component css
+    - Missing text and grids tokens and add them to component css
 - GENERATE DESIGN_TOKENS
 - GENERATE VARIABLES
 - GENERATE SVG COMPONENTS

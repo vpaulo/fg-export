@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::{
     types::{
@@ -25,7 +25,7 @@ struct CssTemplate<'a> {
     rules: &'a Vec<(&'a String, &'a String)>,
 }
 
-#[derive(Template, Debug)]
+#[derive(Template, Debug, PartialEq, Eq, Hash)]
 #[template(path = "markup.html", escape = "none")]
 struct MarkupTemplate {
     tag: String,
@@ -38,6 +38,15 @@ struct MarkupTemplate {
 #[template(path = "theme.html", escape = "none")]
 struct ThemeTemplate {
     rules: BTreeMap<String, Vec<String>>,
+}
+
+#[derive(Template, Debug)]
+#[template(path = "component.html", escape = "none")]
+struct ComponentTemplate {
+    name: String,
+    styles: String,
+    markup: String,
+    tokens: String,
 }
 
 pub fn parse(file: FigmaData) {
@@ -53,14 +62,20 @@ pub fn parse(file: FigmaData) {
     for page in pages {
         let nodes = page.common().children.iter();
 
+        // Get tokens before generating components
+        for node in nodes.clone() {
+            if let Some(_) = node.is_frame() {
+                generate_tokens(node, &styles, &mut tokens);
+            }
+        }
+
+        // Save tokens string to not write in every loop interaction below
+        let tkns = write_tokens(&tokens);
+
         for node in nodes {
             if let Some(_) = node.is_component_or_set() {
                 let mut element: Vec<MarkupTemplate> = Vec::new();
                 let mut css: Vec<String> = Vec::new();
-
-                generate_tokens(node, &styles, &mut tokens);
-
-                // println!(">>> TOKENS: {:?}", tokens);
 
                 generate(
                     node,
@@ -74,15 +89,16 @@ pub fn parse(file: FigmaData) {
                     &tokens,
                 );
 
-                create_css(node.common().get_name(), css.join("\n"), "css");
-                create_markup(
-                    node.common().get_name(),
-                    element,
-                    node.is_component_set().is_some(),
-                );
+                let cmp = ComponentTemplate {
+                    name: node.common().get_name(),
+                    styles: create_css(css.join("\n")),
+                    markup: create_markup(element, node.is_component_set().is_some()),
+                    tokens: tkns.clone(),
+                };
+
+                write_files(node.common().get_name(), cmp.render().unwrap(), "html");
             }
         }
-        write_tokens(&tokens);
     }
 }
 
@@ -135,13 +151,13 @@ fn generate(
         };
 
         if let None = node.is_component_set() {
-            if !is_instance {
-                let element_css = frame.css(parent_frame.clone(), tokens);
-                css.push(get_styles(
-                    &classes,
-                    &element_css.iter().collect::<Vec<(&String, &String)>>(),
-                ));
-            }
+            // if !is_instance {
+            let element_css = frame.css(parent_frame.clone(), tokens);
+            css.push(get_styles(
+                &classes,
+                &element_css.iter().collect::<Vec<(&String, &String)>>(),
+            ));
+            // }
         }
 
         for child in frame.node.children.iter() {
@@ -149,12 +165,12 @@ fn generate(
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
 
-                if !is_instance {
-                    css.push(get_styles(
-                        &text_classes,
-                        &text_css.iter().collect::<Vec<(&String, &String)>>(),
-                    ));
-                }
+                // if !is_instance {
+                css.push(get_styles(
+                    &text_classes,
+                    &text_css.iter().collect::<Vec<(&String, &String)>>(),
+                ));
+                // }
                 element_markup.children.push(MarkupTemplate {
                     tag: "span".to_string(),
                     classes: format!(" class=\"{}\"", vector.get_name()),
@@ -265,25 +281,29 @@ fn get_styles(classes: &String, rules: &Vec<(&String, &String)>) -> String {
     css_template.render().unwrap()
 }
 
-fn create_markup(name: String, values: Vec<MarkupTemplate>, is_set: bool) {
-    // println!(">>> values: {:?}", values);
+fn create_markup(values: Vec<MarkupTemplate>, is_set: bool) -> String {
     let mut content = values[0].render().unwrap();
 
-    // For set components just get first child
-    // TODO: verify if just generating the markup for first child is enough??
     if is_set {
-        content = format!("{}\n", values[0].children[0].render().unwrap());
-        // for child in &values[0].children {
-        //     content.push_str(&format!("{}\n", child.render().unwrap()));
-        // }
+        // content = format!("{}\n", values[0].children[0].render().unwrap());
+        content = String::new();
+        let mut seen = HashSet::new();
+
+        // Remove duplicate markup
+        for child in &values[0].children {
+            if !seen.contains(&child) {
+                seen.insert(child);
+                content.push_str(&format!("{}\n", child.render().unwrap()));
+            }
+        }
     }
 
-    write_files(name, content, "html");
+    content
 }
 
-fn create_css(name: String, content: String, file_type: &str) {
+fn create_css(content: String) -> String {
     // TODO: check options to improve result
-    // TODO: NOT WORKING AS EXPECTED????
+    // TODO: NOT WORKING AS EXPECTED???? if style rule have attribute selectors lightningcss does not work :(
     // Parse a style sheet from a string.
     let mut stylesheet = StyleSheet::parse(content.as_str(), ParserOptions::default()).unwrap();
 
@@ -292,13 +312,11 @@ fn create_css(name: String, content: String, file_type: &str) {
 
     // Serialize it to a string.
     let res = stylesheet.to_css(PrinterOptions::default()).unwrap();
-
-    // println!(">>>>> {:?}/n", res.code);
-
-    write_files(name, res.code, file_type);
+    
+    res.code
 }
 
-fn write_tokens(tokens: &HashMap<String, Token>) {
+fn write_tokens(tokens: &HashMap<String, Token>) -> String {
     let mut tk: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     for (_, token) in tokens.iter() {
@@ -322,6 +340,8 @@ fn write_tokens(tokens: &HashMap<String, Token>) {
 
         let _ = std::fs::write(format!("figma_output/css/theme.css"), format!("{content}"));
     }
+
+    content
 }
 
 fn write_files(name: String, content: String, file_type: &str) {

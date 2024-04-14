@@ -168,6 +168,11 @@ impl Frame {
                 } else {
                     String::new()
                 };
+
+                if val.eq("default") {
+                    return format!("{cl}");
+                }
+
                 return format!("[{attribute}=\"{val}\"]{cl}");
             }
 
@@ -870,6 +875,10 @@ mod frame_tests {
         );
         assert_eq!(
             get_classes_helper("state=hover, type=test"),
+            "[type=\"test\"]:hover"
+        );
+        assert_eq!(
+            get_classes_helper("state=default;hover, type=test"),
             "[type=\"test\"]:hover"
         );
         assert_eq!(
