@@ -49,6 +49,14 @@ struct ComponentTemplate {
     tokens: String,
 }
 
+#[derive(Clone)]
+struct ComponentData {
+    name: String,
+    css: String,
+    html: String,
+    includes: Vec<String>,
+}
+
 pub fn parse(file: FigmaData) {
     let components = file.components;
     let component_sets = file.component_sets;
@@ -58,6 +66,7 @@ pub fn parse(file: FigmaData) {
         ..Default::default()
     };
     let mut tokens: HashMap<String, Token> = HashMap::new();
+    let mut data: BTreeMap<String, ComponentData> = BTreeMap::new();
 
     for page in pages {
         let nodes = page.common().children.iter();
@@ -69,13 +78,12 @@ pub fn parse(file: FigmaData) {
             }
         }
 
-        // Save tokens string to not write in every loop interaction below
-        let tkns = write_tokens(&tokens);
-
         for node in nodes {
             if let Some(_) = node.is_component_or_set() {
                 let mut element: Vec<MarkupTemplate> = Vec::new();
                 let mut css: Vec<String> = Vec::new();
+                // Grabs the instances id's to get the extra css need for a component
+                let mut includes: Vec<String> = Vec::new();
 
                 generate(
                     node,
@@ -83,22 +91,49 @@ pub fn parse(file: FigmaData) {
                     &String::new(),
                     &mut element,
                     &mut css,
+                    &mut includes,
                     false,
                     &components,
                     &component_sets,
                     &tokens,
                 );
 
-                let cmp = ComponentTemplate {
-                    name: node.common().get_name(),
-                    styles: create_css(css.join("\n")),
-                    markup: create_markup(element, node.is_component_set().is_some()),
-                    tokens: tkns.clone(),
-                };
+                includes.dedup(); // remove duplicates
 
-                write_files(node.common().get_name(), cmp.render().unwrap(), "html");
+                data.insert(
+                    node.common().id.clone(),
+                    ComponentData {
+                        name: node.common().get_name(),
+                        css: create_css(css.join("\n")),
+                        html: create_markup(element, node.is_component_set().is_some()),
+                        includes,
+                    },
+                );
             }
         }
+    }
+
+    // TODO: to many clones :/
+    for (_, dt) in &data {
+        let mut css: Vec<String> = Vec::new();
+
+        // This means that the component has instances of other components so we need to add the css of those
+        for id in &dt.includes {
+            if let Some(values) = data.get(id) {
+                css.push(values.css.clone());
+            }
+        }
+
+        css.push(dt.css.clone());
+
+        let cmp = ComponentTemplate {
+            name: dt.name.clone(),
+            styles: css.join(""),
+            markup: dt.html.clone(),
+            tokens: write_tokens(&tokens),
+        };
+
+        write_files(dt.name.clone(), cmp.render().unwrap(), "html");
     }
 }
 
@@ -108,6 +143,7 @@ fn generate(
     parent_classes: &String,
     element: &mut Vec<MarkupTemplate>,
     css: &mut Vec<String>,
+    includes: &mut Vec<String>,
     is_instance: bool,
     components: &HashMap<String, Component>,
     component_sets: &HashMap<String, ComponentSet>,
@@ -131,14 +167,18 @@ fn generate(
         if let Some((_, component_id)) = node.is_instance() {
             if let Some(cmp) = components.get(component_id) {
                 variant_name = cmp.get_name();
+                let mut id = component_id.to_string();
 
                 if let Some(set) = component_sets.get(&cmp.component_set_id) {
+                    id = cmp.component_set_id.to_string();
                     variant_classes = if set.name.eq(&frame.node.name) {
                         frame.node.get_name()
                     } else {
                         format!("{} {}", set.get_name(), frame.node.get_name())
                     }
                 }
+
+                includes.push(id);
             }
         }
 
@@ -151,13 +191,13 @@ fn generate(
         };
 
         if let None = node.is_component_set() {
-            // if !is_instance {
-            let element_css = frame.css(parent_frame.clone(), tokens);
-            css.push(get_styles(
-                &classes,
-                &element_css.iter().collect::<Vec<(&String, &String)>>(),
-            ));
-            // }
+            if !is_instance {
+                let element_css = frame.css(parent_frame.clone(), tokens);
+                css.push(get_styles(
+                    &classes,
+                    &element_css.iter().collect::<Vec<(&String, &String)>>(),
+                ));
+            }
         }
 
         for child in frame.node.children.iter() {
@@ -165,12 +205,12 @@ fn generate(
                 let text_css = vector.css(style);
                 let text_classes = format!("{classes} .{}", vector.get_name());
 
-                // if !is_instance {
-                css.push(get_styles(
-                    &text_classes,
-                    &text_css.iter().collect::<Vec<(&String, &String)>>(),
-                ));
-                // }
+                if !is_instance {
+                    css.push(get_styles(
+                        &text_classes,
+                        &text_css.iter().collect::<Vec<(&String, &String)>>(),
+                    ));
+                }
                 element_markup.children.push(MarkupTemplate {
                     tag: "span".to_string(),
                     classes: format!(" class=\"{}\"", vector.get_name()),
@@ -188,6 +228,7 @@ fn generate(
                     &classes,
                     &mut element_markup.children,
                     css,
+                    includes,
                     condition,
                     components,
                     component_sets,
@@ -312,7 +353,7 @@ fn create_css(content: String) -> String {
 
     // Serialize it to a string.
     let res = stylesheet.to_css(PrinterOptions::default()).unwrap();
-    
+
     res.code
 }
 
